@@ -5,6 +5,7 @@ import time
 from pepper_bt.topics import Speaking
 import pepper_bt.constant as const
 from pepper_bt.conditions import PermitRobotSpeak
+from pepper_bt.actions import ShowPainting
 
 def pre_tick_handler(behaviour_tree) :
     print("\n--------- Run %s ---------\n" % behaviour_tree.count)
@@ -31,7 +32,7 @@ def create_tree() :
     interact_with_user.add_children([user_initiative,robot_initiative,no_one_initiative])
 
     ########third row 
-    user_is_speaking = py_trees.behaviours.Success("User Is Speaking")
+    user_is_speaking = py_trees.behaviours.Success("User is Speaking")
     user_turn = py_trees.behaviours.Success("User Is Allowed Turn")
     attention_evidence = py_trees.behaviours.Failure("Give Evidence of Attention,etc")
     user_initiative.add_children([user_is_speaking,user_turn,attention_evidence])
@@ -47,20 +48,23 @@ def create_tree() :
     robot_turn.add_children([robot_speaking,robot_takes_turn])
 
     ################fourth row 
-    react_user_input = py_trees.composites.Selector(name="React to User Input")
+    react_user_input = py_trees.behaviours.Success("React to User Input")
+    #react_user_input = py_trees.composites.Selector(name="React to User Input")
     ensure_joint_attention = py_trees.composites.Sequence(name="Ensure Joint Attention")
     deliver_presentation = py_trees.composites.Sequence(name="Deliver Presentation")
-    execute_presentation.add_child(deliver_presentation)
+    execute_presentation.add_children([react_user_input, deliver_presentation])
 
     ################################fifth row 
     speak = py_trees.composites.Selector(name="Speak")
-    deliver_presentation.add_child(speak)
+    show_paint = ShowPainting(const.SCREAM_PAINTING_URL)
+    #show_paint = py_trees.behaviours.Success("Show Painting on Tablet")
+    deliver_presentation.add_children([show_paint, speak])
 
     ################################################################sixth row
-    #permit_robot_speak = PermitRobotSpeak()
-    permit_robot_speak = py_trees.behaviours.Success("Permit Robot Speak")
-    #speak_mic = Speaking(const.SCREAM_PAINTING)
-    speak_mic = py_trees.behaviours.Success("Robot Is Speaking")
+    permit_robot_speak = PermitRobotSpeak()
+    #permit_robot_speak = py_trees.behaviours.Success("Permit Robot Speak")
+    speak_mic = Speaking(const.SCREAM_PAINTING)
+    #speak_mic = py_trees.behaviours.Success("Robot Starts Speaking")
     speak.add_children([permit_robot_speak,speak_mic])
 
     root.add_child(establish_enagagment)
@@ -77,14 +81,14 @@ def main():
 
     print(py_trees.display.print_ascii_tree(root))
     # Visualized the behavior tree - path:./catkin_ws
-    #print(py_trees.display.render_dot_tree(root))
+    print(py_trees.display.render_dot_tree(root))
 
     behaviour_tree = py_trees.trees.BehaviourTree(root)
     behaviour_tree.add_pre_tick_handler(pre_tick_handler)
     behaviour_tree.setup(timeout=15)
 
 
-    for _unused_i in range(0, 2):
+    for _unused_i in range(0, 1):
         try:
             #py_trees.console.read_single_keypress()
             behaviour_tree.tick()
