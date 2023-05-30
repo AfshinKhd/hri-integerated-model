@@ -30,6 +30,7 @@ class TabletShowImage():
             tabletService.enableWifi()
             #tabletService.playVideo("http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4")
             tabletService.showImage(img_url)
+            #tabletService.showImage(img_url)
             #time.sleep(5)
             #tabletService.hideImage()
         except Exception as e:
