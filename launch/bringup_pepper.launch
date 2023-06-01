@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+    <include file="$(find naoqi_driver)/launch/naoqi_driver.launch" >
+    <arg name="nao_ip" value="10.0.0.3 "/>
+    <arg name="network_interface" value="ens33"/>
+    </include>
+    
+
+</launch>

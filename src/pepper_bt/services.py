@@ -26,6 +26,7 @@ class TabletShowImage():
 
     def show_image(self,img_url):
         try:
+            
             tabletService = self.session.service("ALTabletService")
             tabletService.enableWifi()
             #tabletService.playVideo("http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4")
