@@ -24,43 +24,43 @@ def create_tree() :
 
     #first row - right leaves 
     interact_with_user = py_trees.composites.Selector(name="Interact with User")
-    ####second row - left leaves 
+    #second row - left leaves 
     user_initiative = py_trees.composites.Sequence(name="User's Initiative")
-    ####second row - right leaves
+    #second row - right leaves
     robot_initiative = py_trees.composites.Sequence(name="Robot's Initiative")
     no_one_initiative = py_trees.behaviours.Failure("No One has Initiative")
     interact_with_user.add_children([user_initiative,robot_initiative,no_one_initiative])
 
-    ########third row 
+    #third row 
     user_is_speaking = py_trees.behaviours.Success("User is Speaking")
     user_turn = py_trees.behaviours.Success("User Is Allowed Turn")
     attention_evidence = py_trees.behaviours.Failure("Give Evidence of Attention,etc")
     user_initiative.add_children([user_is_speaking,user_turn,attention_evidence])
 
-    ########third row 
+    #third row 
     robot_turn = py_trees.composites.Selector(name="Robot has Turn")
     execute_presentation = py_trees.composites.Sequence(name="Execute Presentation")
     robot_initiative.add_children([robot_turn,execute_presentation])
 
-    ################fourth row 
+    #fourth row 
     robot_speaking = py_trees.behaviours.Success("Robot is Speaking")
     robot_takes_turn = py_trees.behaviours.Success("Robot takes Turn")
     robot_turn.add_children([robot_speaking,robot_takes_turn])
 
-    ################fourth row 
+    #fourth row 
     react_user_input = py_trees.behaviours.Success("React to User Input")
     #react_user_input = py_trees.composites.Selector(name="React to User Input")
     ensure_joint_attention = py_trees.composites.Sequence(name="Ensure Joint Attention")
     deliver_presentation = py_trees.composites.Sequence(name="Deliver Presentation")
     execute_presentation.add_children([react_user_input, deliver_presentation])
 
-    ################################fifth row 
+    #fifth row 
     speak = py_trees.composites.Selector(name="Speak")
     show_paint = ShowPainting(const.SCREAM_PAINTING_URL)
     #show_paint = py_trees.behaviours.Success("Show Painting on Tablet")
     deliver_presentation.add_children([show_paint, speak])
 
-    ################################################################sixth row
+    #sixth row
     permit_robot_speak = PermitRobotSpeak()
     #permit_robot_speak = py_trees.behaviours.Success("Permit Robot Speak")
     speak_mic = Speaking(const.SCREAM_PAINTING)
