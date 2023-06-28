@@ -1,1 +1,8 @@
 *.py[cod]
+
+.menv/
+
+present_poster.dot
+present_poster.svg
+present_poster.png
+
