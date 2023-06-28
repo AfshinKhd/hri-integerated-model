@@ -123,6 +123,7 @@ class HumanGreeter(object):
         #print("time: ",self.people_perception.getTimeBeforeVisiblePersonDisappears())
         #print("time: ",self.people_perception.getTimeBeforePersonDisappears())
         self.callback = None
+        self.stop_run = False
      
     def set_callback(self, callback):
         self.callback = callback
@@ -156,9 +157,9 @@ class HumanGreeter(object):
                 # Second Field = Extra info (empty for now).
                 faceExtraInfo = faceInfo[1]
 
-                print("Face Infos :  alpha %.3f - beta %.3f \n" % (faceShapeInfo[1], faceShapeInfo[2]))
-                print("Face Infos :  width %.3f - height %.3f \n" % (faceShapeInfo[3], faceShapeInfo[4]))
-                print("Face Extra Infos :" + str(faceExtraInfo))
+                # print("Face Infos :  alpha %.3f - beta %.3f \n" % (faceShapeInfo[1], faceShapeInfo[2]))
+                # print("Face Infos :  width %.3f - height %.3f \n" % (faceShapeInfo[3], faceShapeInfo[4]))
+                # print("Face Extra Infos :" + str(faceExtraInfo))
 
     def on_person_looks_at_robot(self, data):
         print("on_person_looks_at_robot")
@@ -240,7 +241,7 @@ class HumanGreeter(object):
 
     def run(self):
         # start
-        print("Waiting for the robot to be in wake up position")
+        # print("Waiting for the robot to be in wake up position")
         # self.motion.wakeUp()
         # self.posture_service.goToPosture("StandInit", 0.5)
 
@@ -249,13 +250,19 @@ class HumanGreeter(object):
         # self.set_awareness(True)
 
         try:
-            while True:
+            while not self.stop_run:
                 time.sleep(.5)
         except KeyboardInterrupt:
             print("Interrupted by user, stopping HumanGreeter")
             #self.face_detection.unsubscribe("HumanGreeter")
             #stop
             sys.exit(0)
+
+    def stop(self):
+         self.face_detection.unsubscribe("HumanGreeter")
+         self.stop_run = True
+        #  for subscriber in  self.subscribers:
+        #      subscriber.signal.disconnectAll()
 
 
     def create_callbacks(self):

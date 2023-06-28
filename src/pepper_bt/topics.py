@@ -4,16 +4,19 @@ import py_trees
 import rospy
 from std_msgs.msg import String
 
+
 class Speaking(py_trees.behaviour.Behaviour):
 
     def __init__(self, message):
-        super(Speaking,self).__init__(name = "User Is Speaking")
+        super(Speaking,self).__init__(name = "Robot Is Speaking")
         self.logger.debug("  %s [Speaking::__init__()]" % self.__class__.__name__)
         self.state = py_trees.Blackboard()
         self.msg = message
 
     def initialise(self):
         self.logger.debug("  %s [Speaking::initialise()]" % self.__class__.__name__)
+
+    def dummy_function(self): pass
 
 
     def update(self):

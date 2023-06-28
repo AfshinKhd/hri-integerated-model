@@ -10,6 +10,10 @@ from pepper_bt.services import *
 import pepper_bt.configs as cfg
 from statemachine import StateMachine, State
 
+import py_trees
+import rospy
+from std_msgs.msg import String
+
 def pre_tick_handler(behaviour_tree) :
     print("\n--------- Run %s ---------\n" % behaviour_tree.count)
 
@@ -80,36 +84,110 @@ def create_tree() :
 
 
 def main():
+    print("Pepper Starts Detection...")
+    # pepper_detect_control = PepperDetectionControl()
+    # PepperPresentationControl()
+    # pepper_detect_control.cycle()
+    # print(pepper_detect_control.current_state)
+    # print(pepper_detect_control.send('cycle'))
+    behaviour_tree = PepperBTControl()
+    fsm_control = PepperFSMControl(behaviour_tree)
+
+
+
+
+    for _unused_i in range(0, 10):
+        try:
+            #py_trees.console.read_single_keypress()
+            # behaviour_tree.tick()
+            print("heeeeeeeeeeeeeeeeeeeeee444444444444")
+            if fsm_control.is_detected_active():
+                behaviour_tree.tick()
+            
+            time.sleep(1)
+        except KeyboardInterrupt:
+            break
+    
+    print("Pepper Stop Presentation!")
+    print("\n")
+    
+
+def PepperBTControl():
+    
     root = create_tree()
-
-
     py_trees.logging.level = py_trees.logging.Level.DEBUG
 
-    print(py_trees.display.print_ascii_tree(root))
+    # print(py_trees.display.print_ascii_tree(root))
     # Visualized the behavior tree - path:./catkin_ws
-    print(py_trees.display.render_dot_tree(root))
+    # print(py_trees.display.render_dot_tree(root))
 
     behaviour_tree = py_trees.trees.BehaviourTree(root)
     behaviour_tree.add_pre_tick_handler(pre_tick_handler)
     behaviour_tree.setup(timeout=15)
 
-    pepper_detect_control = PepperDetectControl()
-    # pepper_detect_control.cycle()
-    # print(pepper_detect_control.current_state)
-    # print(pepper_detect_control.send('cycle'))
+    return behaviour_tree
 
-    for _unused_i in range(0, 100):
-        try:
-            #py_trees.console.read_single_keypress()
-            #behaviour_tree.tick()
-           
-            time.sleep(1)
-        except KeyboardInterrupt:
-            break
+
+class PepperFSMControl():
+    def __init__(self, behaviour_tree):
+        # self.behaviour_tree = behaviour_tree
+        self.current_state = 'idle'
+        # self.presentation_permission = True
+        self.pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
+        self.human_greeter = self.pepper.start_recognizing_people()
+        self.human_greeter.set_callback(self.callback_method)
+        #ensuring push only one cycle event
+        self.face_detected = False
+        self.on_enter_idle()
+
+    def cycle(self):
+        if self.current_state == 'idle':
+            self.current_state = 'detected'
+            self.on_exit_idle()
+            self.on_enter_detected()
+
+        elif self.current_state == 'detected':
+            self.current_state = 'idle'
+            self.on_exit_detected()
+            self.on_enter_idle
+
+    def on_enter_idle(self):
+        print("====enter idle STATE") 
+        self.human_greeter.run()   
+        
+
+    def on_exit_idle(self):
+        print("=====exit idle STATE")
+        self.human_greeter.stop()
+
+    def on_enter_detected(self):
+        print("====enter people detected STATE")
+        # print("Pepper starts Presentation...")
+        # if self.presentation_permission:
+        #     self.behaviour_tree.tick()
+        #     self.presentation_permission = False
+        # self.say()
+     
+
+    def on_exit_detected(self):
+        print("^^^====exit People detected STATE")
+
+    def is_idle_active(self):
+        return self.current_state == 'idle'
     
-    print("\n")
+    def is_detected_active(self):
+        return self.current_state == 'detected'
 
-class PepperDetectControl(StateMachine):
+    def callback_method(self, value):
+        # Do something with the received value
+        print("Received value:", value)
+        if not self.face_detected:
+            self.cycle()
+            self.face_detected = True
+        
+
+
+class PepperDetectionControl(StateMachine):
     idle = State("Idle",initial=True)
     people_detected = State("Person Detected")
 
@@ -121,8 +199,8 @@ class PepperDetectControl(StateMachine):
         self.pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
         self.human_greeter = self.pepper.start_recognizing_people()
         self.human_greeter.set_callback(self.callback_method)
-
-        super(PepperDetectControl, self).__init__()
+        self.face_detected = False
+        super(PepperDetectionControl, self).__init__()
 
     def before_cycle(self, event_data=None):
         message = event_data.kwargs.get("message", "")
@@ -135,20 +213,37 @@ class PepperDetectControl(StateMachine):
         )
     
 
-    def callback_method(self, value):
-        # Do something with the received value
-        print("Received value:", value)
-        
+  
         
     def on_enter_idle(self):
-        print("enter idle")    
+        print("====enter idle STATE")    
         self.human_greeter.run()
 
     def on_exit_idle(self):
-        print("exit idle")
+        print("=====exit idle STATE")
+        self.human_greeter.stop()
 
     def on_enter_people_detected(self):
-        print("enter people detected")
+        print("====enter people detected STATE")
+        # PepperPresentationControl()
+        behaviour_tree = PepperBTControl()
+        behaviour_tree.tick()
+
 
     def on_exit_people_detected(self):
-        print("find it!")
+        print("^^^====exit People detected STATE")
+
+    def callback_method(self, value):
+        # Do something with the received value
+        print("Received value:", value)
+        if not self.face_detected:
+            self.send('cycle')
+            self.face_detected = True
+        
+
+    def say(self):
+        print("heere")
+        rospy.init_node('pepper_speaker')
+        publisher = rospy.Publisher('/speech', String, queue_size=10)
+        rospy.sleep(2.0)
+        publisher.publish("this is test")
