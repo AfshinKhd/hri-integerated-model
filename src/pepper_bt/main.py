@@ -6,6 +6,9 @@ from pepper_bt.topics import Speaking
 import pepper_bt.constant as const
 from pepper_bt.conditions import PermitRobotSpeak
 from pepper_bt.actions import ShowPainting
+from pepper_bt.services import *
+import pepper_bt.configs as cfg
+from statemachine import StateMachine, State
 
 def pre_tick_handler(behaviour_tree) :
     print("\n--------- Run %s ---------\n" % behaviour_tree.count)
@@ -74,8 +77,11 @@ def create_tree() :
 
 
 
+
+
 def main():
     root = create_tree()
+
 
     py_trees.logging.level = py_trees.logging.Level.DEBUG
 
@@ -87,13 +93,62 @@ def main():
     behaviour_tree.add_pre_tick_handler(pre_tick_handler)
     behaviour_tree.setup(timeout=15)
 
+    pepper_detect_control = PepperDetectControl()
+    # pepper_detect_control.cycle()
+    # print(pepper_detect_control.current_state)
+    # print(pepper_detect_control.send('cycle'))
 
-    for _unused_i in range(0, 1):
+    for _unused_i in range(0, 100):
         try:
             #py_trees.console.read_single_keypress()
-            behaviour_tree.tick()
+            #behaviour_tree.tick()
+           
             time.sleep(1)
         except KeyboardInterrupt:
             break
     
     print("\n")
+
+class PepperDetectControl(StateMachine):
+    idle = State("Idle",initial=True)
+    people_detected = State("Person Detected")
+
+    cycle = idle.to(people_detected) | people_detected.to(idle)
+    people_recognised = idle.to(people_detected)
+    people_disappeared = people_detected.to(idle)
+
+    def __init__(self):
+        self.pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
+        self.human_greeter = self.pepper.start_recognizing_people()
+        self.human_greeter.set_callback(self.callback_method)
+
+        super(PepperDetectControl, self).__init__()
+
+    def before_cycle(self, event_data=None):
+        message = event_data.kwargs.get("message", "")
+        message = ". " + message if message else ""
+        return "Running {} from {} to {}{}".format(
+            event_data.event,
+            event_data.transition.source.id,
+            event_data.transition.target.id,
+            message,
+        )
+    
+
+    def callback_method(self, value):
+        # Do something with the received value
+        print("Received value:", value)
+        
+        
+    def on_enter_idle(self):
+        print("enter idle")    
+        self.human_greeter.run()
+
+    def on_exit_idle(self):
+        print("exit idle")
+
+    def on_enter_people_detected(self):
+        print("enter people detected")
+
+    def on_exit_people_detected(self):
+        print("find it!")

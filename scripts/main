@@ -4,8 +4,8 @@ import pepper_bt.main as p
 from pepper_bt.services import *
 import pepper_bt.configs as cfg
 
-pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
-pepper.recognize_people()
+# pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
+# pepper.start_recognizing_people()
 
-#p.main()
+p.main()
 

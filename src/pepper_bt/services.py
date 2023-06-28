@@ -4,6 +4,8 @@ import argparse
 import sys
 import time
 
+from naoqi import ALProxy
+
 import rospy
 # from naoqi_bridge_msgs.msg import PeoplePerceptionPeopleList, PeoplePerceptionPeopleDetected
 
@@ -26,10 +28,7 @@ class Pepper():
             self.session.connect("tcp://" + args.ip + ":" + str(args.port))
 
             self.tabletService = self.session.service("ALTabletService")
-            self.memory_service = self.session.service("ALMemory")
-            self.gaze_analysis = self.session.service("ALGazeAnalysis")
             self.motion_service = self.session.service("ALMotion")
-            self.people_perception = self.session.service("ALPeoplePerception")
             self.face_characteristic = self.session.service("ALFaceCharacteristics")
             self.speaking_movement = self.session.service("ALSpeakingMovement")
         except RuntimeError:
@@ -49,174 +48,17 @@ class Pepper():
         except Exception as e:
             print("Error is %s" % e)
 
-    def gaze_detection(self):
-        #self.connect_callback("GazeAnalysis/PersonStartsLookingAtRobot",self.on_gaze_data)
-
-        try:
-            print("tollerance: ", self.gaze_analysis.getTolerance())
-            self.memory_service.subscriber("GazeAnalysis/PeopleLookingAtRobot").signal.connect(self.on_person_looks_at_robot)
-            self.memory_service.subscriber("GazeAnalysis/PersonStartsLookingAtRobot").signal.connect(self.on_person_starts_looking_at_robot)
-            self.memory_service.subscriber("GazeAnalysis/PersonStopsLookingAtRobot").signal.connect(self.on_person_stop_looking_at_robot)
-        except Exception as e:
-            print("Error is %s" % e)
-
-        
-
-        # Keep the script running
-        while True:
-            pass
-
-    def people_(self):
-        rospy.init_node("pepper_people_detection")
-        self.people_perception.setFastModeEnabled(True)
-        subscriber = self.memory_service.subscriber("PeoplePerception/PeopleDetected")
-        subscriber.signal.connect(self.people_detected)
-        rospy.spin()
-    #     try:
-    #         while True:
-    #     # Keep the program running to receive person detection events
-    #             pass
-    #     except KeyboardInterrupt:
-    # # Unsubscribe from person detection events and disconnect
-    #         self.people_perception.unsubscribe("PersonDetection")
-            
     
-    def people_percept(self):
-        # Enable person detection
-        self.people_perception.setFastModeEnabled(True)
-        print("hi")
-        try:
-
-            subscribers = []
-            subscriber1 = self.memory_service.subscriber("PeoplePerception/PeopleList")
-            subscriber1.signal.connect(self.on_people_recognized)
-            subscribers.append(subscriber1)
-
-
-            subscriber2 = self.memory_service.subscriber("PeoplePerception/PeopleDetected")
-            subscriber2.signal.connect(self.people_detected)
-            subscribers.append(subscriber2)
-            # self.memory_service.subscriber("PeoplePerception/PeopleList", PeoplePerceptionPeopleList).signal.connect(self.on_people_recognized)
-            # self.memory_service.subscriber("PeoplePerception/PeopleDetected", PeoplePerceptionPeopleDetected).signal.connect(self.people_detected)
-        except Exception as e:
-            print("Error is %s" % e)
-
-        try:
-            while True:
-                # Keep the program running to receive person detection events
-                pass
-        except KeyboardInterrupt:
-                subscriber2.signal.disconnect(self.people_detected)
-
-    def people_detected(self, data):
-        print("people detected!!!")
-
-    
-
-    def move_toward(self):
-        self.memory_service.subscriber("move_forward_event").signal.connect(self.move_forward_event)
-        while True:
-            pass
-
-
-    def move_forward_event(self, value):
-        print("Got event Move Forward : ",str(value))
-
-        try:
-            self._moveForward(value)
-            self.motion_service.stopMove()
-        except KeyboardInterrupt:
-            print( "KeyBoard Interrupt initiated")
-            self.motion_service.stopMove()
-            exit()
-        except Exception as errorMsg:
-            print(str(errorMsg))
-            print("This example is not allowed on this robot.")
-            exit()
-
-        return
-    
-    def _moveForward(self, amnt):
-        #TARGET VELOCITY
-        X = 0.5  # forward
-        Y = 0.0
-        Theta = 0.0
-
-        try:
-            self.motion_service.moveToward(X, Y, Theta)
-        except KeyboardInterrupt:
-            print("KeyBoard Interrupt initiated")
-            self.motion_service.stopMove()
-            exit()
-        except Exception as errorMsg:
-            print(str(errorMsg))
-            print("This example is not allowed on this robot.")
-            exit()
-
-        print("=====================================================================")
-        print( "Forward Movement Started")
-        time.sleep(float(amnt))
-        print("Forward Movement Complete")
-        print("=====================================================================")
-
-        return
-
-
-    def get_face_properties(self):
-        face_id = self.memory_service.getData("PeoplePerception/PeopleList")
-        #self.speaking_movement.setEnabled(True)
-                # loop on, wait for events until manual interruption
-        print("face ids: ", face_id)
-        # try:
-        #     while True:
-        #         time.sleep(1)
-        # except KeyboardInterrupt:
-           # print "Interrupted by user, shutting down"
-
-           # print "Starting Clean Up process"
-           # self.cleanUp()
-
-          #  print "Waiting for the robot to be in rest position"
-          #  self.motion.rest()
-
-            # sys.exit(0)
-    
-    def recognize_people(self):
+    def start_recognizing_people(self):
         try:
             app = qi.Application(["HumanGreeter", "--qi-url=" + self.connection_url])
         except RuntimeError:
             print ("HumanGreeter connection has error to connect")
             sys.exit(1)
          
-        human_greeter = HumanGreeter(app)
-        human_greeter.run()
+        return HumanGreeter(app)
         
-
-    def on_people_recognized(self, data):
-       print("poeple")
         
-
-    def connect_callback(self, event_name, callback_function):
-        print("Callback Connection")
-        #self.memory_service.subscriber(event_name).signal.connect(callback_function)
-        self.memory_service.subscriber("GazeAnalysis/PersonStartsLookingAtRobot").signal.connect(self.on_person_looks_at_robot)
-
-    def on_person_looks_at_robot(self, data):
-        print("here")
-        event_name = data[0]
-        person_id = data[1]
-        subscriber_identifier = data[2]
-       
-        print("event_name: ", event_name)
-        print("person_id: ", person_id)
-        print("subscriber_identifier: ", subscriber_identifier)
-
-    def on_person_starts_looking_at_robot(self,data):
-        print("start")
-
-    def on_person_stop_looking_at_robot(self,data):
-        print("stop")
-    
     def move_head_down(self):
         """Look down"""
         self.motion_service.setAngles("HeadPitch", 0.46, 0.2)
@@ -263,30 +105,195 @@ class HumanGreeter(object):
         session = app.session
 
         self.memory = session.service("ALMemory")
-        
-        self.subscriber = self.memory.subscriber("FaceDetected")
-        self.subscriber.signal.connect(self.on_human_tracked)
+        self.gaze_analysis = session.service("ALGazeAnalysis")
+        self.people_perception = session.service("ALPeoplePerception")
+        self.posture_service   = session.service("ALRobotPosture")
+        self.motion            = session.service("ALMotion")
+        self.awareness_service = session.service("ALBasicAwareness")
+
         # Get the services ALTextToSpeech and ALFaceDetection.
-        # self.tts = session.service("ALTextToSpeech")
+        self.tts = session.service("ALTextToSpeech")
         self.face_detection = session.service("ALFaceDetection")
         self.face_detection.subscribe("HumanGreeter")
+        # # Enable or disable tracking.
+        # self.face_detection.enableTracking(False)
+        self.subscribers = []
         self.got_face = False
+        #self.people_perception.resetPopulation()
+        #print("time: ",self.people_perception.getTimeBeforeVisiblePersonDisappears())
+        #print("time: ",self.people_perception.getTimeBeforePersonDisappears())
+        self.callback = None
+     
+    def set_callback(self, callback):
+        self.callback = callback
+
+    def trigger_callback(self, value):
+        if self.callback:
+            self.callback(value)  
 
 
     def on_human_tracked(self, value):
-        """
-        Callback for event FaceDetected.
-        """
-        print("faced detected!!!!")
+        self.trigger_callback("Trigggggggggggggggggger !!!!!!!!!!")
+        if value == []:  # empty value when the face disappears
+            print("empty")
+            self.got_face = False
+        elif not self.got_face:  # only speak the first time a face appears
+            self.got_face = True
+            print("I saw a face!")
+            self.tts.say("Hello, you!")
+            # First Field = TimeStamp.
+            timeStamp = value[0]
+            print("TimeStamp is: " + str(timeStamp))
+
+            # Second Field = array of face_Info's.
+            faceInfoArray = value[1]
+            for j in range( len(faceInfoArray)-1 ):
+                faceInfo = faceInfoArray[j]
+
+                # First Field = Shape info.
+                faceShapeInfo = faceInfo[0]
+
+                # Second Field = Extra info (empty for now).
+                faceExtraInfo = faceInfo[1]
+
+                print("Face Infos :  alpha %.3f - beta %.3f \n" % (faceShapeInfo[1], faceShapeInfo[2]))
+                print("Face Infos :  width %.3f - height %.3f \n" % (faceShapeInfo[3], faceShapeInfo[4]))
+                print("Face Extra Infos :" + str(faceExtraInfo))
+
+    def on_person_looks_at_robot(self, data):
+        print("on_person_looks_at_robot")
+        print(data)
+        # event_name = data[0]
+        # person_id = data[1]
+        # subscriber_identifier = data[2]
+       
+        # print("event_name: ", event_name)
+        # print("person_id: ", person_id)
+        # print("subscriber_identifier: ", subscriber_identifier)
+
+    def on_person_starts_looking_at_robot(self,data):
+        print("on_person_starts_looking_at_robot")
+        print(data)
+
+    def on_person_stop_looking_at_robot(self,data):
+        print("on_person_stop_looking_at_robot")
+        print(data)
+
+ 
+    def move_forward_event(self, value):
+        print("Got event Move Forward : ",str(value))
+
+        try:
+            self._moveForward(value)
+            self.motion_service.stopMove()
+        except KeyboardInterrupt:
+            print( "KeyBoard Interrupt initiated")
+            self.motion_service.stopMove()
+            exit()
+        except Exception as errorMsg:
+            print(str(errorMsg))
+            print("This example is not allowed on this robot.")
+            exit()
+
+    
+    def _moveForward(self, amnt):
+        #TARGET VELOCITY
+        X = 0.5  # forward
+        Y = 0.0
+        Theta = 0.0
+
+        try:
+            self.motion_service.moveToward(X, Y, Theta)
+        except KeyboardInterrupt:
+            print("KeyBoard Interrupt initiated")
+            self.motion_service.stopMove()
+            exit()
+        except Exception as errorMsg:
+            print(str(errorMsg))
+            print("This example is not allowed on this robot.")
+            exit()
+
+        print("=====================================================================")
+        print( "Forward Movement Started")
+        time.sleep(float(amnt))
+        print("Forward Movement Complete")
+        print("=====================================================================")
+
+        
+    def on_people_list(self,data):
+        print("people list")
+        print(data)
+
+
+    def on_people_detected(self, data):
+        print("on people detected")
+        print(data)
+
+    def on_non_visible_people_list(self,data):
+        print("on_non_visible_people_list")
+        print(data)
+
+    def on_just_left(self,data):
+        print("on_just_left")
+        print(data)
 
 
     def run(self):
+        # start
+        print("Waiting for the robot to be in wake up position")
+        # self.motion.wakeUp()
+        # self.posture_service.goToPosture("StandInit", 0.5)
+
         print("Starting HumanGreeter")
+        self.create_callbacks()
+        # self.set_awareness(True)
+
         try:
             while True:
-                time.sleep(1)
+                time.sleep(.5)
         except KeyboardInterrupt:
             print("Interrupted by user, stopping HumanGreeter")
-            self.face_detection.unsubscribe("HumanGreeter")
+            #self.face_detection.unsubscribe("HumanGreeter")
             #stop
             sys.exit(0)
+
+
+    def create_callbacks(self):
+        self.connect_callback("FaceDetected",self.on_human_tracked)
+        # self.connect_callback("GazeAnalysis/PeopleLookingAtRobot",self.on_person_looks_at_robot)
+        # self.connect_callback("GazeAnalysis/PersonStartsLookingAtRobot",self.on_person_starts_looking_at_robot)
+        # self.connect_callback("GazeAnalysis/PersonStopsLookingAtRobot",self.on_person_stop_looking_at_robot)
+        # self.connect_callback("PeoplePerception/PeopleList",self.on_people_list)
+        # self.connect_callback("PeoplePerception/PeopleDetected",self.on_people_detected)
+        # self.connect_callback("PeoplePerception/NonVisiblePeopleList",self.on_non_visible_people_list)
+        # # self.connect_callback("PeoplePerception/JustLeft",self.on_just_left)
+        # self.connect_callback("move_forward_event",self.move_forward_event)
+
+    def set_awareness(self, state):
+        """
+        Turn on or off the basic awareness of the robot,
+        e.g. looking for humans, self movements etc.
+
+        :param state: If True set on, if False set off
+        :type state: bool
+        """
+        if state:
+            self.awareness_service.resumeAwareness()
+            print("[INFO]: Awareness is turned on")
+        else:
+            self.awareness_service.pauseAwareness()
+            print("[INFO]: Awareness is paused")
+
+
+        
+    def connect_callback(self, event_name, callback_function):
+        try:
+            subscriber = self.memory.subscriber(event_name)
+            subscriber.signal.connect(callback_function)
+            self.subscribers.append(subscriber)
+        except Exception as e:
+            print("Error is %s" % e)
+
+
+
+      
