@@ -3,9 +3,43 @@
 import pepper_bt.main as p
 from pepper_bt.services import *
 import pepper_bt.configs as cfg
+import pepper_bt.constant as const
+import pepper_bt.topics as topics
+import rospy
 
-# pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
-# pepper.start_recognizing_people()
+#pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
+#pepper.tablet_services()
+
+#pepper.tablet_show_web("")
+#pepper.share_localhost("/home/aass/html")
+# pepper.listen()
+
+#pepper.say(const.SCREAM_PAINTING)
 
 p.main()
+
+
+# from threading import Thread
+
+
+# def start_speainking():
+#     print("here")
+#     speak = topics.Speaking_()
+#     speak.say(const.SCREAM_PAINTING)
+ 
+#     while not rospy.is_shutdown() :
+#         tic = time.time()
+#         # print(tic)
+	
+
+# if __name__ == "__main__":
+
+#     thread_speak = Thread(target=start_speainking ,args=())
+#     thread_speak.daemon = True
+#     thread_speak.start()
+#     #thread_speak.join()
+
+#     print("hellllloooooo")
+#     # while not rospy.is_shutdown() :
+#     #     tic = time.time()
 

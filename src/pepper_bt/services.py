@@ -3,13 +3,27 @@ import qi
 import argparse
 import sys
 import time
-
+import os
 from naoqi import ALProxy
-
+import paramiko
+from scp import SCPClient
 import rospy
+import subprocess
+import pepper_bt.configs as cfg
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 # from naoqi_bridge_msgs.msg import PeoplePerceptionPeopleList, PeoplePerceptionPeopleDetected
 
-import subprocess
+
+class patched_SSHClient(paramiko.SSHClient):
+    def _auth(self, username, password, *args):
+        if not password:
+            try:
+                self._transport.auth_none(username)
+                return
+            except paramiko.BadAuthenticationType:
+                pass
+        paramiko.SSHClient._auth(self, username, password, *args)
 
 
 class Pepper():
@@ -23,19 +37,196 @@ class Pepper():
         args = parser.parse_args()       
         self.session = qi.Session()
         self.connection_url = "tcp://" + args.ip + ":" + str(args.port)
+        self.ip = ip_address
+        self.beep_volume = 70 #(0~100)
         
         try:
             self.session.connect("tcp://" + args.ip + ":" + str(args.port))
-
-            self.tabletService = self.session.service("ALTabletService")
+            self.led_service = self.session.service("ALLeds")
+            self.memory_service = self.session.service("ALMemory")
+            self.tablet_service = self.session.service("ALTabletService")
             self.motion_service = self.session.service("ALMotion")
             self.face_characteristic = self.session.service("ALFaceCharacteristics")
             self.speaking_movement = self.session.service("ALSpeakingMovement")
+
+            self.audio_player = self.session.service("ALAudioPlayer")
+            self.audio_recorder = self.session.service("ALAudioRecorder")
+            self.speech_service = self.session.service("ALSpeechRecognition")
+            self.tts = self.session.service("ALTextToSpeech")
+
+            ssh = patched_SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.load_system_host_keys()
+            #ssh.connect(hostname=ip_address, username="nao", password=" ")
+            #self.scp = SCPClient(ssh.get_transport())
+
         except RuntimeError:
             print ("Can't connect to Naoqi at ip \"" + args.ip + "\" on port " + str(args.port) +".\n"
                 "Please check your script arguments. Run with -h option for help.")
             sys.exit(1)      
 
+    def listen(self):
+        if True:
+            self.audio_player.playSine(1000,self.beep_volume,1,0.3)
+            time.sleep(.5)
+            self.blink_eyes([255, 255, 0])
+
+        base_duration=3
+        self.record_time = time.time()+base_duration
+        self.audio_recorder.stopMicrophonesRecording()
+        print('Speech Detected : Start Recording')
+        channels = [0,0,1,0] #left,right,front,rear
+        fileidx = "recog"
+        #self.audio_recorder.startMicrophonesRecording("/home/nao/record/"+fileidx+".wav", "wav", 48000, channels)
+        self.audio_recorder.startMicrophonesRecording("/home/nao/speech.wav", "wav", 48000, channels)
+        #self.audio_recorder.startMicrophonesRecording("/home/nao/speech.wav", "wav", 48000, (0, 0, 1, 0))
+        #
+        #
+        while time.time() < self.record_time :
+            print(time.time())
+            # if self.audio_terminate :
+            #     self.audio_recorder.stopMicrophonesRecording()
+            #     print('kill!!!')
+            #     return None
+            time.sleep(0.1)
+        
+        self.audio_recorder.stopMicrophonesRecording()
+        self.audio_recorder.recording_ended = True
+
+        if not os.path.exists('./audio_record'):
+                os.mkdir('./audio_record', 0755)
+
+        cmd = 'sshpass -p 1847! scp nao@'+str(self.ip)+':/home/nao/speech.wav ./audio_record'
+        os.system(cmd)
+        #self.download_file("speech.wav")
+   
+   
+        print("Stop Recording")
+        self.blink_eyes([0, 0, 0])
+
+
+    
+    def blink_eyes(self, rgb):
+        """
+        Blink eyes with defined color
+
+        :param rgb: Color in RGB space
+        :type rgb: integer
+
+        :Example:
+
+        >>> pepper.blink_eyes([255, 0, 0])
+
+        """
+        self.led_service.fadeRGB('AllLeds', rgb[0], rgb[1], rgb[2], 1.0)
+
+
+    def share_localhost(folder):
+        """
+        Shares a location on localhost via HTTPS to Pepper be
+        able to reach it by subscribing to IP address of this
+        computer.
+
+        :Example:
+
+
+        :param folder: Root folder to share
+        :type folder: string
+        """
+        # TODO: Add some elegant method to kill a port if previously opened
+        subprocess.Popen(["cd", folder])
+        try:
+            subprocess.Popen(["python", "-m", "SimpleHTTPServer"])
+        except Exception as error:
+            subprocess.Popen(["python", "-m", "SimpleHTTPServer"])
+        print("[INFO]: HTTPS server successfully started")
+
+
+    def tablet_show_web(self, url = cfg.WEB_URL):
+            try:
+                # Ensure that the tablet wifi is enable
+                self.tablet_service.enableWifi()
+                # Display a web page on the tablet
+                #self.tabletService.showWebview("http://www.facebook.com")
+                time.sleep(1)
+                self.tablet_service.showWebview(url)
+                return True
+            except Exception as e:
+                print("tablet_show_web function, error:",e)
+                return False
+
+    def tablet_hide_web(self):
+         self.tablet_service.hideWebview()
+    
+    def download_file(self, file_name):
+        """
+        Download a file from robot to ./tmp folder in root.
+
+        ..warning:: Folder ./tmp has to exist!
+        :param file_name: File name with extension (or path)
+        :type file_name: string
+        """
+        self.scp.get(file_name, local_path="/audio_record/")
+        print("[INFO]: File " + file_name + " downloaded")
+        self.scp.close()
+    
+    def play_sound(self, sound):
+        """
+        Play a `mp3` or `wav` sound stored on Pepper
+
+        .. note:: This is working only for songs stored in robot.
+
+        :param sound: Absolute path to the sound
+        :type sound: string
+        """
+        print("[INFO]: Playing " + sound)
+        self.audio_service.playFile(sound)
+
+    def stop_sound(self):
+        """Stop sound"""
+        print("[INFO]: Stop playing the sound")
+        self.audio_service.stopAll()
+    
+    def say(self, text):
+        """
+        Text to speech (robot internal engine)
+
+        :param text: Text to speech
+        :type text: string
+        """
+        self.tts.say(text)
+        print("[INFO]: Robot says: " + text)
+
+
+    def presentation_gesture(self):
+        self.hand("left",True)
+    
+    def hand(self, hand, close):
+        """
+        Close or open hand
+
+        :param hand: Which hand
+            - left
+            - right
+        :type hand: string
+        :param close: True if close, false if open
+        :type close: boolean
+        """
+        hand_id = None
+        if hand == "left":
+            hand_id = "LHand"
+        elif hand == "right":
+            hand_id = "RHand"
+
+        if hand_id:
+            if close:
+                self.motion_service.setAngles(hand_id, 0.0, 0.2)
+                print("[INFO]: Hand " + hand + "is closed")
+            else:
+                self.motion_service.setAngles(hand_id, 1.0, 0.2)
+                print("[INFO]: Hand " + hand + "is opened")
+        else:
+            print("[INFO]: Cannot move a hand")
 
     def tablet_show_image(self,img_url):
         try:
@@ -57,7 +248,37 @@ class Pepper():
             sys.exit(1)
          
         return HumanGreeter(app)
-        
+    
+    def tablet_services(self):
+        try:
+           app = qi.Application(["TabletModule", "--qi-url=" + self.connection_url])
+           app.start()
+           self._tablet_touch_handling(app)
+        except RuntimeError:
+           print ("tablet connection has error to connect")
+           sys.exit(1)
+
+    def _tablet_touch_handling(self, app):
+        try:
+            session = app.session
+            tabletService = session.service("ALTabletService")
+
+            # Don't forget to disconnect the signal at the end
+            signalID = 0
+
+        # function called when the signal onTouchDown is triggered
+            def callback(x, y):
+                print("coordinate are x: ", x, " y: ", y)
+                if x > 640:
+                    # disconnect the signal
+                    tabletService.onTouchDown.disconnect(signalID)
+                    app.stop()
+
+        # attach the callback function to onJSEvent signal
+            signalID = tabletService.onTouchDown.connect(callback)
+            app.run()
+        except Exception as  e:
+            print("Error was: ", e)
         
     def move_head_down(self):
         """Look down"""

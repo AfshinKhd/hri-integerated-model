@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+
+import pepper_bt.main as p
+from pepper_bt.services import *
+import pepper_bt.configs as cfg
+import pepper_bt.constant as const
+import pepper_bt.topics as topics
+import rospy
+pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
+
+
+
+if __name__ == "__main__":
+    speak = topics.Speaking_()
+    speak.say(const.SCREAM_PAINTING)
+ 
