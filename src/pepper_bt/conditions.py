@@ -38,7 +38,7 @@ class UserEngaged(py_trees.behaviour.Behaviour):
     def update(self) :
         self.logger.debug("[%s::update()] - user engaged: %r" % (self.__class__.__name__ , self.blackboard.get(bl_util.user_engaged)))
         if self.blackboard.get(bl_util.user_engaged):
-            if self.blackboard.get(bl_util.paint_is_chosen):
+            if self.blackboard.get(bl_util.selected_painting) != None:
                 return py_trees.common.Status.SUCCESS
             else:
                 return py_trees.common.Status.FAILURE

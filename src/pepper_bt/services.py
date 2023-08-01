@@ -7,7 +7,7 @@ import os
 from naoqi import ALProxy
 import paramiko
 from scp import SCPClient
-import rospy
+import pepper_bt.constant as const
 import subprocess
 import pepper_bt.configs as cfg
 import logging
@@ -35,12 +35,14 @@ class Pepper():
         parser.add_argument("--port", type=int, default=port,
                             help="Naoqi port number")
         args = parser.parse_args()       
-        self.session = qi.Session()
         self.connection_url = "tcp://" + args.ip + ":" + str(args.port)
         self.ip = ip_address
+
         self.beep_volume = 70 #(0~100)
         
         try:
+            self.app = qi.Application(["TabletModule", "--qi-url=" + self.connection_url])
+            self.session = qi.Session()
             self.session.connect("tcp://" + args.ip + ":" + str(args.port))
             self.led_service = self.session.service("ALLeds")
             self.memory_service = self.session.service("ALMemory")
@@ -48,11 +50,12 @@ class Pepper():
             self.motion_service = self.session.service("ALMotion")
             self.face_characteristic = self.session.service("ALFaceCharacteristics")
             self.speaking_movement = self.session.service("ALSpeakingMovement")
-
+            self.animation_service = self.session.service("ALAnimationPlayer")
             self.audio_player = self.session.service("ALAudioPlayer")
             self.audio_recorder = self.session.service("ALAudioRecorder")
             self.speech_service = self.session.service("ALSpeechRecognition")
             self.tts = self.session.service("ALTextToSpeech")
+            self.posture_service = self.session.service("ALRobotPosture")
 
             ssh = patched_SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -148,7 +151,7 @@ class Pepper():
                 self.tablet_service.enableWifi()
                 # Display a web page on the tablet
                 #self.tabletService.showWebview("http://www.facebook.com")
-                time.sleep(1)
+                #time.sleep(3)
                 self.tablet_service.showWebview(url)
                 return True
             except Exception as e:
@@ -197,9 +200,28 @@ class Pepper():
         self.tts.say(text)
         print("[INFO]: Robot says: " + text)
 
+    def set_speech_speed(self, speed = 80):
+        print("speed of speack is :",self.tts.getParameter("speed"))
+        self.tts.setParameter("speed", speed)
+        
 
-    def presentation_gesture(self):
-        self.hand("left",True)
+    def reset_speach_speed(self):
+        print("speed of speack is :",self.tts.getParameter("speed"))
+        self.tts.resetSpeed()
+
+    def present_gesture(self):
+        #self.hand("left",False)
+        names = list()
+        times = list()
+        keys = list()
+        # names.append("LElbowRoll")
+        times.append([1.01, 1.3, 1.6])
+        keys.append([-1.37289, -1.12923, -0.369652])
+        self.motion_service.angleInterpolation(names, keys, times, True)
+
+        #self.motion_service.angleInterpolationWithSpeed(["RShoulderPitch", "RWristYaw", "RHand"], [0.8, 2.5, 1.0], 1.0)
+
+        self.start_animation("Explain_11")
     
     def hand(self, hand, close):
         """
@@ -228,6 +250,28 @@ class Pepper():
         else:
             print("[INFO]: Cannot move a hand")
 
+    
+
+    def start_animation(self, animation):
+        """
+        Starts a animation which is stored on robot
+
+        .. seealso:: Take a look a the animation names in the robot \
+        http://doc.aldebaran.com/2-5/naoqi/motion/alanimationplayer.html#alanimationplayer
+
+        :param animation: Animation name
+        :type animation: string
+        :return: True when animation has finished
+        :rtype: bool
+        """
+        try:
+            animation_finished = self.animation_service.run("animations/Stand/Gestures/" + animation, _async=True)
+            animation_finished.value()
+            return True
+        except Exception as error:
+            print(error)
+            return False
+
     def tablet_show_image(self,img_url):
         try:
             self.tabletService.enableWifi()
@@ -249,36 +293,53 @@ class Pepper():
          
         return HumanGreeter(app)
     
-    def tablet_services(self):
+    def tablet_touch_handling(self):
         try:
-           app = qi.Application(["TabletModule", "--qi-url=" + self.connection_url])
-           app.start()
-           self._tablet_touch_handling(app)
+           self.app.start()
+           return self.app
         except RuntimeError:
            print ("tablet connection has error to connect")
            sys.exit(1)
 
-    def _tablet_touch_handling(self, app):
+    def _touch_dwon_feedback(self, app):
         try:
             session = app.session
             tabletService = session.service("ALTabletService")
-
+            painting = []
             # Don't forget to disconnect the signal at the end
             signalID = 0
 
-        # function called when the signal onTouchDown is triggered
+            # function called when the signal onTouchDown is triggered
             def callback(x, y):
                 print("coordinate are x: ", x, " y: ", y)
-                if x > 640:
-                    # disconnect the signal
-                    tabletService.onTouchDown.disconnect(signalID)
-                    app.stop()
-
-        # attach the callback function to onJSEvent signal
+                if x < 500 and x > 80:
+                    painting.append(const.judgment_of_cambyses_painting['name'])
+                elif x > 500 and x < 1670:
+                    painting.append(const.scream_painting['name'])
+                else:
+                    print("Dosn't exist painting on tablet")
+                tabletService.onTouchDown.disconnect(signalID)
+                #app.stop()
+               
+    
+             # attach the callback function to onJSEvent signal
             signalID = tabletService.onTouchDown.connect(callback)
-            app.run()
+            #app.run()
+            try:
+                while len(painting) == 0:    
+                    time.sleep(.5)
+            except KeyboardInterrupt:
+                print("Interrupted by user, stopping HumanGreeter")
+                return None
+            return painting[0]
+
         except Exception as  e:
             print("Error was: ", e)
+
+    def stand(self):
+        """Get robot into default standing position known as `StandInit` or `Stand`"""
+        self.posture_service.goToPosture("Stand", 0.5)
+        print("[INFO]: Robot is in default position")
         
     def move_head_down(self):
         """Look down"""

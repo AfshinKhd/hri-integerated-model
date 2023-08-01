@@ -9,7 +9,7 @@ import rospy
 
 #pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
 #pepper.tablet_services()
-
+#pepper.presentation_gesture()
 #pepper.tablet_show_web("")
 #pepper.share_localhost("/home/aass/html")
 # pepper.listen()

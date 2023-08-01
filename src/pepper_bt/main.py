@@ -6,10 +6,11 @@ import time
 
 import pepper_bt.constant as const
 from pepper_bt.conditions import PermitRobotSpeak ,RobotSpeaking, UserEngaged
-from pepper_bt.actions import ShowPainting, Speaking, EngageUser
+from pepper_bt.actions import ShowPainting, RobotStartSpeaking, EngageUser, RobotTakesTurn
 from pepper_bt.services import *
 import pepper_bt.configs as cfg
 from statemachine import StateMachine, State
+from pepper_bt.services import Pepper
 
 import py_trees
 import rospy
@@ -20,7 +21,7 @@ def pre_tick_handler(behaviour_tree) :
 
 
 
-def create_tree() :
+def create_tree(pepper) :
     root = py_trees.composites.Sequence(name="Present Poster")
 
 
@@ -28,72 +29,62 @@ def create_tree() :
     # Conditon
     user_engaged = UserEngaged("User Enagaged")
     # Action
-    engage_user = EngageUser("Engage User")
+    engage_user = EngageUser(pepper, "Engage User")
     #engage_user = py_trees.behaviours.Success("Enagage User")
     #engage_user = py_trees.behaviours.Running(name="Running")
     establish_enagagment.add_children([user_engaged,engage_user])
 
 
-    # interact_with_user = py_trees.composites.Selector(name="Interact with User")
-    # #second row 
-    # user_initiative = py_trees.composites.Sequence(name="User's Initiative")
-    # #second row 
-    # robot_initiative = py_trees.composites.Sequence(name="Robot's Initiative")
-    # no_one_initiative = py_trees.behaviours.Failure("No One has Initiative")
-    # interact_with_user.add_children([user_initiative,robot_initiative,no_one_initiative])
+    interact_with_user = py_trees.composites.Selector(name="Interact with User")
 
-    # #third row 
-    # user_is_speaking = py_trees.behaviours.Success("User is Speaking")
-    # user_turn = py_trees.behaviours.Success("User is Allowed Turn")
-    # attention_evidence = py_trees.behaviours.Failure("Give Evidence of Attention,etc")
-    # user_initiative.add_children([user_is_speaking,user_turn,attention_evidence])
+    user_initiative = py_trees.composites.Sequence(name="User's Initiative")
+    robot_initiative = py_trees.composites.Sequence(name="Robot's Initiative")
+    no_one_initiative = py_trees.behaviours.Failure("No One has Initiative")
+    interact_with_user.add_children([user_initiative,robot_initiative,no_one_initiative])
+ 
+    # Todo: I think dummy ?
+    user_is_speaking = py_trees.behaviours.Success("User is Speaking")
+    user_turn = py_trees.behaviours.Success("User is Allowed Turn")
+    attention_evidence = py_trees.behaviours.Failure("Give Evidence of Attention,etc")
+    user_initiative.add_children([user_is_speaking,user_turn,attention_evidence])
 
-    # #third row 
-    # robot_turn = py_trees.composites.Selector(name="Robot Has Turn")
-    # execute_presentation = py_trees.composites.Sequence(name="Execute Presentation")
-    # robot_initiative.add_children([robot_turn,execute_presentation])
+    robot_turn = py_trees.composites.Selector(name="Robot Has Turn")
+    execute_presentation = py_trees.composites.Sequence(name="Execute Presentation")
+    robot_initiative.add_children([robot_turn,execute_presentation])
+ 
+    # Condition
+    robot_is_speaking = py_trees.behaviours.Failure("Robot is Speaking")
+    # Action
+    robot_takes_turn = RobotTakesTurn(pepper, "Robot Takes Turn")
+    robot_turn.add_children([robot_is_speaking,robot_takes_turn])
 
-    # #fourth row 
-    # #robot_speaking = py_trees.behaviours.Success("Robot is Speaking")
-    # robot_speaking = RobotSpeaking()
-    # robot_takes_turn = py_trees.behaviours.Success("Robot Takes Turn")
-    # robot_turn.add_children([robot_speaking,robot_takes_turn])
-
-    # #fourth row 
-    # react_user_input = py_trees.behaviours.Success("React to User Input")
+    # Todo : ????
+    react_user_input = py_trees.behaviours.Success("React to User Input")
     # #react_user_input = py_trees.composites.Selector(name="React to User Input")
-    # ensure_joint_attention = py_trees.composites.Sequence(name="Ensure Joint Attention")
-    # deliver_presentation = py_trees.composites.Sequence(name="Deliver Presentation")
-    # execute_presentation.add_children([react_user_input, deliver_presentation])
+    #ensure_joint_attention = py_trees.composites.Sequence(name="Ensure Joint Attention")
+    deliver_presentation = py_trees.composites.Sequence(name="Deliver Presentation")
+    execute_presentation.add_children([react_user_input, deliver_presentation])
 
-    # #fifth row 
-    # speak = py_trees.composites.Selector(name="Speak (From Pepper)")
-    # show_paint = ShowPainting(const.SCREAM_PAINTING_URL)
-    # #show_paint = py_trees.behaviours.Success("Show Painting on Tablet")
-    # deliver_presentation.add_children([show_paint, speak])
+    # Action
+    robot_start_speaking = RobotStartSpeaking(pepper, name="Speak (From Pepper)")
+    deliver_presentation.add_child(robot_start_speaking)
 
-    # #sixth row
-    # permit_robot_speak = PermitRobotSpeak()
-    # #permit_robot_speak = py_trees.behaviours.Success("Permit Robot Speak")
-    # speak_mic = Speaking(const.SCREAM_PAINTING)
-    # #speak_mic = py_trees.behaviours.Success("Robot Starts Speaking")
-
-    # speak.add_children([permit_robot_speak,speak_mic])
 
     root.add_child(establish_enagagment)
-    #root.add_child(interact_with_user)
-    #root.add_child(user_is_speaking)
+    root.add_child(interact_with_user)
+
     return root
 
 
 def main():
     print("Pepper Starts Detection...")
+    pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
     # pepper_detect_control = PepperDetectionControl()
     # PepperPresentationControl()
     # pepper_detect_control.cycle()
     # print(pepper_detect_control.current_state)
     # print(pepper_detect_control.send('cycle'))
-    behaviour_tree = PepperBTControl()
+    behaviour_tree = PepperBTControl(pepper)
     #fsm_control = PepperFSMControl()
 
 
@@ -108,14 +99,19 @@ def main():
             time.sleep(1)
         except KeyboardInterrupt:
             break
+        
+
+    pepper.tablet_hide_web()
+    pepper.stand()
+    
     
     print("\nPepper Stop Presentation!\n")
 
     
 
-def PepperBTControl():
+def PepperBTControl(pepper):
     
-    root = create_tree()
+    root = create_tree(pepper)
     py_trees.logging.level = py_trees.logging.Level.DEBUG
 
     print(py_trees.display.print_ascii_tree(root))
@@ -187,7 +183,6 @@ class PepperFSMControl():
             self.face_is_detected = True
             self.cycle()
 
-        
 
 
 class PepperDetectionControl(StateMachine):

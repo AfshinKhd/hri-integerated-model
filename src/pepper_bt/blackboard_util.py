@@ -8,3 +8,4 @@ painting_describtion = "painting_describtion"
 
 user_engaged = "user_engaged"
 paint_is_chosen = "paint_is_chosen"
+selected_painting = "selected_painting"
