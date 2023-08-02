@@ -9,7 +9,7 @@ from pepper_bt.msg import SpeechParams
 from pepper_bt.services import Pepper
 import configs as cfg
 import os
-import pepper_bt.blackboard_util as bl_util
+import pepper_bt.blackboard_util 
 
 
 class Speaking():

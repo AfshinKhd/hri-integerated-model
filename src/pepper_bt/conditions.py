@@ -4,7 +4,7 @@ import typing
 import py_trees
 from py_trees import common
 from pepper_bt.topics import Listening
-import pepper_bt.blackboard_util as bl_util
+from pepper_bt.blackboard_util import BlackboardItems
 
 
 class PermitRobotSpeak(py_trees.behaviour.Behaviour):
@@ -30,15 +30,15 @@ class UserEngaged(py_trees.behaviour.Behaviour):
         self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
         self.blackboard = py_trees.Blackboard()
         # After FSM, the engaged status in BT should be changed from None to True
-        if self.blackboard.get(bl_util.user_engaged) is None:
-            self.blackboard.set(bl_util.user_engaged, value=True, overwrite=True)
+        if self.blackboard.get(BlackboardItems.USER_ENGAGED) is None:
+            self.blackboard.set(BlackboardItems.USER_ENGAGED, value=True, overwrite=True)
 
 
 
     def update(self) :
-        self.logger.debug("[%s::update()] - user engaged: %r" % (self.__class__.__name__ , self.blackboard.get(bl_util.user_engaged)))
-        if self.blackboard.get(bl_util.user_engaged):
-            if self.blackboard.get(bl_util.selected_painting) != None:
+        self.logger.debug("[%s::update()] - user engaged: %r" % (self.__class__.__name__ , self.blackboard.get(BlackboardItems.USER_ENGAGED)))
+        if self.blackboard.get(BlackboardItems.USER_ENGAGED):
+            if self.blackboard.get(BlackboardItems.USER_ENGAGED) != None:
                 return py_trees.common.Status.SUCCESS
             else:
                 return py_trees.common.Status.FAILURE
@@ -63,6 +63,30 @@ class RobotSpeaking(py_trees.behaviour.Behaviour):
         self.logger.debug("  %s [Listening::update()]" % self.__class__.__name__)
         self.listener.listen()
         return py_trees.common.Status.SUCCESS
+    
+    def terminate(self, new_status):
+        self.logger.debug("  %s [Listening::terminate()]" % self.__class__.__name__)
+
+
+class UserTurn(py_trees.behaviour.Behaviour):
+
+    def __init__(self, knowedge_manager, name="User is Allowed Turn"):
+        super(RobotSpeaking,self).__init__(name = name)
+        self.logger.debug("  %s [Listening::__init__()]" % self.__class__.__name__)
+        self.knowedge_manager = knowedge_manager
+        self.blackboard = py_trees.Blackboard()
+
+    def initialise(self):
+        self.logger.debug("  %s [Listening::initialise()]" % self.__class__.__name__)
+
+    def update(self):
+        self.logger.debug("  %s [Listening::update()]" % self.__class__.__name__)
+        # This means only user selected the painting and there is no dialogs yet
+        if len(self.knowedge_manager) == 0:
+            return py_trees.common.Status.SUCCESS
+            #self.blackboard.set(BlackboardItems.USERTURN, value=True, overwrite=True )
+        else:
+            return py_trees.common.Status.FAILURE
     
     def terminate(self, new_status):
         self.logger.debug("  %s [Listening::terminate()]" % self.__class__.__name__)

@@ -209,18 +209,19 @@ class Pepper():
         print("speed of speack is :",self.tts.getParameter("speed"))
         self.tts.resetSpeed()
 
-    def present_gesture(self):
-        #self.hand("left",False)
+    def speech_gesture(self):
         names = list()
         times = list()
         keys = list()
-        # names.append("LElbowRoll")
+        names.append("LElbowRoll")
         times.append([1.01, 1.3, 1.6])
         keys.append([-1.37289, -1.12923, -0.369652])
         self.motion_service.angleInterpolation(names, keys, times, True)
 
         #self.motion_service.angleInterpolationWithSpeed(["RShoulderPitch", "RWristYaw", "RHand"], [0.8, 2.5, 1.0], 1.0)
 
+    def present_gesture(self):
+        #self.hand("left",False)
         self.start_animation("Explain_11")
     
     def hand(self, hand, close):
@@ -312,9 +313,9 @@ class Pepper():
             # function called when the signal onTouchDown is triggered
             def callback(x, y):
                 print("coordinate are x: ", x, " y: ", y)
-                if x < 500 and x > 80:
+                if x < 690 and x > 80:
                     painting.append(const.judgment_of_cambyses_painting['name'])
-                elif x > 500 and x < 1670:
+                elif x > 690 and x < 1680:
                     painting.append(const.scream_painting['name'])
                 else:
                     print("Dosn't exist painting on tablet")
