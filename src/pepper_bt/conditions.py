@@ -90,6 +90,8 @@ class UserTurn(py_trees.behaviour.Behaviour):
         elif self.knowledge_manager.is_further_speech(item):
 
             return py_trees.common.Status.SUCCESS
+        #elif 
+        # Todo: final step get rate
         else:
             return py_trees.common.Status.FAILURE
     

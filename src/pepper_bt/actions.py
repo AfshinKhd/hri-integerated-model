@@ -124,6 +124,10 @@ class RobotTakesTurn(py_trees.behaviour.Behaviour):
             self.knowledge_manager.add_item(UtteranceType.FURTHER, dialog=dialog, backchannel=False)
             self._say(dialog)
             return py_trees.common.Status.FAILURE
+            # Todo: continue further speech 
+            # Todo: do you like the presentation please give me a rate 
+            # show new web ? 
+        # todo final step back fail and go to no one 
         else:
             dialog = Backchannel.CONFIRM.value
             self.knowledge_manager.add_item(UtteranceType.ROBOT, dialog=dialog, backchannel=True)
@@ -170,6 +174,7 @@ class ProcessUserInput(py_trees.behaviour.Behaviour):
             # Todo: static code
             _user_fb = "Your Answer is : Yes!"
             self.knowledge_manager.add_item(UtteranceType.USER, dialog=_user_fb, backchannel=False)
+        # Todo elif final step say thank put the rate in the file + speech 
         else:
             dialog = "Selected Painting is " + ("" if self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value) == None else self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value))
             self.knowledge_manager.add_item(UtteranceType.INIT, dialog, backchannel=False)
@@ -207,10 +212,12 @@ class ReactUserInput(py_trees.behaviour.Behaviour):
         
         
 
-
+        item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
         print ("helper is intial")
         if self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value) == const.judgment_of_cambyses_painting['name']:
             dialog = const.JUDGEMNT_OF_CAMBYSES_PAINTING_DESCRIBTION
+            # Todo: TAG
+            #if get_item_speech
         elif self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value) == const.scream_painting['name']:
             dialog = const.SCREAM_PAINTING_DESCRIBTION
         else:
