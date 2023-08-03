@@ -19,3 +19,5 @@ scream_painting = {'name':"the_scream",'describtion':SCREAM_PAINTING_DESCRIBTION
 judgment_of_cambyses_painting = {'name':"judgment_of_cambyses",'describtion':JUDGEMNT_OF_CAMBYSES_PAINTING_DESCRIBTION}
 
 PRESENTATION_HELLO = "Which art do you choose?"
+
+FURTHER_INFORMATION = "Do you want further information about painting?"

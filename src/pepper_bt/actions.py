@@ -51,9 +51,11 @@ class RobotStartsSpeaking(py_trees.behaviour.Behaviour):
         # Todo : check robot speech
         item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
         self.blackboard.set(BlackboardItems.SPEAKING_IS_RUNNING.value,True,overwrite=True)
+        self.pepper.set_speech_speed(95)
         self.pepper.say(KnowledgeManager.get_item_speech(item))
+        self.pepper.reset_speach_speed()
         self.blackboard.set(BlackboardItems.SPEAKING_IS_RUNNING.value,False,overwrite=True)
-
+        
         return py_trees.common.Status.SUCCESS
     
     def terminate(self, new_status):
@@ -116,15 +118,24 @@ class RobotTakesTurn(py_trees.behaviour.Behaviour):
     def update(self):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
 
-        self.knowledge_manager.add_item(UtteranceType.ROBOT, dialog=Backchannel.CONFIRM.value, backchannel=True)
-        self.pepper.set_speech_speed(75)
-        self.pepper.say(Backchannel.CONFIRM.value)
+        item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
+        if self.knowledge_manager.is_robot_speech(item):
+            dialog = const.FURTHER_INFORMATION
+            self.knowledge_manager.add_item(UtteranceType.ROBOT, dialog=Backchannel.CONFIRM.value, backchannel=True)
+            self._say(dialog)
+            return py_trees.common.Status.FAILURE
+        else:
+            dialog = Backchannel.CONFIRM.value
+            self.knowledge_manager.add_item(UtteranceType.ROBOT, dialog=dialog, backchannel=True)
+            self._say(dialog)
+            return py_trees.common.Status.SUCCESS
+
+        
+    def _say(self, dialog):
+        self.pepper.set_speech_speed(80)
+        self.pepper.say(dialog)
         self.pepper.reset_speach_speed()
-
-        time.sleep(3)
-
-        return py_trees.common.Status.SUCCESS
-
+        time.sleep(1)
     
     def terminate(self, new_status):
         self.logger.debug("[%s::terminate()]" % self.__class__.__name__)

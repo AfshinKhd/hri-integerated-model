@@ -96,7 +96,7 @@ def main():
     #fsm_control = PepperFSMControl()
 
 
-    for _unused_i in range(0, 2):
+    for _unused_i in range(0, 3):
         try:
             #py_trees.console.read_single_keypress()
             # behaviour_tree.tick()

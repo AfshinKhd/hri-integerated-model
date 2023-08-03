@@ -23,6 +23,10 @@ class KnowledgeManager():
     def get_item_speech(item):
         return item['speech']
     
+    @staticmethod
+    def is_robot_speech(item):
+        return item['state'] == UtteranceType.ROBOT.value
+     
     def _generator_list(self):
         for item in self._list[::-1]:
             yield item
