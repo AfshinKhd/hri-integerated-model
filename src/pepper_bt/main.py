@@ -5,7 +5,7 @@ import time
 #from pepper_bt.topics import Speaking
 
 import pepper_bt.constant as const
-from pepper_bt.conditions import PermitRobotSpeak ,RobotSpeaking, UserEngaged
+from pepper_bt.conditions import *
 from pepper_bt.actions import *
 from pepper_bt.services import *
 import pepper_bt.configs as cfg
@@ -45,7 +45,8 @@ def create_tree(pepper, knowledge_manager) :
  
     # Todo: I think dummy ?
     #user_is_speaking = py_trees.behaviours.Success("User is Speaking")
-    user_turn = py_trees.behaviours.Success("User is Allowed Turn")
+    # Condition
+    user_turn = UserTurn(pepper, knowledge_manager, "User is Allowed Turn")
     process_user_input = ProcessUserInput(pepper, knowledge_manager)
     attention_evidence = GivieAttentionEvidance(pepper, knowledge_manager, "Give Evidence of Attention, etc")
     user_initiative.add_children([user_turn,process_user_input,attention_evidence])
@@ -72,8 +73,8 @@ def create_tree(pepper, knowledge_manager) :
 
     # Action
     robot_starts_speaking = RobotStartsSpeaking(pepper, knowledge_manager, "Robot Starts Speaking")
-    ensure_positive_understanding = EnsurePositiveUnderstanding(pepper,knowledge_manager, "Ensure Positive Understanding")
-    deliver_presentation.add_children([ensure_positive_understanding, robot_starts_speaking])
+    #ensure_positive_understanding = EnsurePositiveUnderstanding(pepper,knowledge_manager, "Ensure Positive Understanding")
+    deliver_presentation.add_child(robot_starts_speaking)
 
 
     root.add_child(establish_enagagment)

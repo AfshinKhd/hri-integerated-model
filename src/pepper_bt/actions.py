@@ -270,6 +270,8 @@ class GivieAttentionEvidance(py_trees.behaviour.Behaviour):
         self.pepper.set_speech_speed(75)
         self.pepper.say(KnowledgeManager.get_item_speech(item))
         self.pepper.reset_speach_speed()
+
+        self.blackboard.set(BlackboardItems.ROBOT_IS_SPEAKING.value, value=True, overwrite=True )
         time.sleep(2)
 
         return py_trees.common.Status.SUCCESS
