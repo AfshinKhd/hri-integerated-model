@@ -121,7 +121,7 @@ class RobotTakesTurn(py_trees.behaviour.Behaviour):
         item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
         if self.knowledge_manager.is_robot_speech(item):
             dialog = const.FURTHER_INFORMATION
-            self.knowledge_manager.add_item(UtteranceType.ROBOT, dialog=Backchannel.CONFIRM.value, backchannel=True)
+            self.knowledge_manager.add_item(UtteranceType.FURTHER, dialog=dialog, backchannel=False)
             self._say(dialog)
             return py_trees.common.Status.FAILURE
         else:
@@ -158,13 +158,32 @@ class ProcessUserInput(py_trees.behaviour.Behaviour):
     def update(self):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
         
-        dialog = "Selected Painting is " + ("" if self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value) == None else self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value))
-        self.knowledge_manager.add_item(UtteranceType.INIT, dialog, backchannel=False)
+        item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
+        if self.knowledge_manager.is_further_speech(item):
+            # Todo, say yes or no:
+            dialog = const.YES_NO
+            self.knowledge_manager.add_item(UtteranceType.ROBOT, dialog=dialog, backchannel=False)
+            self._say(dialog)
+            # 5 second wait for answer
+            self.pepper.get_user_speech()
+            time.sleep(2)
+            # Todo: static code
+            _user_fb = "Your Answer is : Yes!"
+            self.knowledge_manager.add_item(UtteranceType.USER, dialog=_user_fb, backchannel=False)
+        else:
+            dialog = "Selected Painting is " + ("" if self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value) == None else self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value))
+            self.knowledge_manager.add_item(UtteranceType.INIT, dialog, backchannel=False)
+
         print(str(self.knowledge_manager))
 
         return py_trees.common.Status.SUCCESS
-
     
+    def _say(self, dialog):
+        self.pepper.set_speech_speed(80)
+        self.pepper.say(dialog)
+        self.pepper.reset_speach_speed()
+
+
     def terminate(self, new_status):
         self.logger.debug("[%s::terminate()]" % self.__class__.__name__)
 

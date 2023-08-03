@@ -70,10 +70,10 @@ class RobotSpeaking(py_trees.behaviour.Behaviour):
 
 class UserTurn(py_trees.behaviour.Behaviour):
 
-    def __init__(self,pepper, knowedge_manager, name="User is Allowed Turn"):
+    def __init__(self,pepper, knowledge_manager, name="User is Allowed Turn"):
         super(UserTurn,self).__init__(name = name)
         self.logger.debug("  %s [Listening::__init__()]" % self.__class__.__name__)
-        self.knowedge_manager = knowedge_manager
+        self.knowledge_manager = knowledge_manager
         
         self.blackboard = py_trees.Blackboard()
 
@@ -83,10 +83,13 @@ class UserTurn(py_trees.behaviour.Behaviour):
     def update(self):
         self.logger.debug("  %s [Listening::update()]" % self.__class__.__name__)
         # This means only user selected the painting and there is no dialogs yet
-        print("User Turrrrrrrrrrrrn: " , str(self.knowedge_manager))
-        if len(self.knowedge_manager) == 0:
+        item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
+        if len(self.knowledge_manager) == 0:
             return py_trees.common.Status.SUCCESS
             #self.blackboard.set(BlackboardItems.USERTURN, value=True, overwrite=True )
+        elif self.knowledge_manager.is_further_speech(item):
+
+            return py_trees.common.Status.SUCCESS
         else:
             return py_trees.common.Status.FAILURE
     

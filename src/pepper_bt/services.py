@@ -68,7 +68,11 @@ class Pepper():
                 "Please check your script arguments. Run with -h option for help.")
             sys.exit(1)      
       
+    def get_user_speech(self):
+        self.audio_player.playSine(1000,self.beep_volume,1,0.3)
+        time.sleep(.5)
 
+        
     def listen(self):
         if True:
             self.audio_player.playSine(1000,self.beep_volume,1,0.3)

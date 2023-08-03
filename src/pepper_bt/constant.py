@@ -21,3 +21,5 @@ judgment_of_cambyses_painting = {'name':"judgment_of_cambyses",'describtion':JUD
 PRESENTATION_HELLO = "Which art do you choose?"
 
 FURTHER_INFORMATION = "Do you want further information about painting?"
+
+YES_NO = "Please say Yes or No after beep sound?"

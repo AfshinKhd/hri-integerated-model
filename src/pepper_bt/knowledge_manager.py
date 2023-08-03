@@ -4,6 +4,7 @@ from enum import Enum
 class UtteranceType(Enum):
     INIT = "init"
     ROBOT = "robot"
+    FURTHER = "further"
     USER = "user"
     FINAL = "final"
 
@@ -21,11 +22,21 @@ class KnowledgeManager():
 
     @staticmethod
     def get_item_speech(item):
+        if item == None:
+            return ""
         return item['speech']
     
     @staticmethod
     def is_robot_speech(item):
+        if item == None:
+            return False
         return item['state'] == UtteranceType.ROBOT.value
+    
+    @staticmethod
+    def is_further_speech(item):
+        if item == None:
+            return False
+        return item['state'] == UtteranceType.FURTHER.value
      
     def _generator_list(self):
         for item in self._list[::-1]:
