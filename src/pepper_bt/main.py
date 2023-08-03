@@ -47,7 +47,7 @@ def create_tree(pepper, knowledge_manager) :
     #user_is_speaking = py_trees.behaviours.Success("User is Speaking")
     user_turn = py_trees.behaviours.Success("User is Allowed Turn")
     process_user_input = ProcessUserInput(pepper, knowledge_manager)
-    attention_evidence = py_trees.behaviours.Failure("Give Evidence of Attention,etc")
+    attention_evidence = GivieAttentionEvidance(pepper, knowledge_manager, "Give Evidence of Attention, etc")
     user_initiative.add_children([user_turn,process_user_input,attention_evidence])
 
     robot_turn = py_trees.composites.Selector(name="Robot Has Turn")
@@ -95,7 +95,7 @@ def main():
     #fsm_control = PepperFSMControl()
 
 
-    for _unused_i in range(0, 1):
+    for _unused_i in range(0, 2):
         try:
             #py_trees.console.read_single_keypress()
             # behaviour_tree.tick()
