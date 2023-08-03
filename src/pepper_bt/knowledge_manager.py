@@ -13,18 +13,22 @@ class KnowledgeManager():
     def __init__(self):
         self._list = []
 
-    def add(self, item):
+    def _add(self, item):
         self._list.append(item)
 
-    def set_item(self, state, dialog, backchannel=False):
-        return {'state': state.value, 'backchannel': backchannel, 'speech': dialog}
+    def add_item(self, state, dialog, backchannel=False):
+        self._add({'state': state.value, 'backchannel': backchannel, 'speech': dialog})
+
+    @staticmethod
+    def get_item_speech(item):
+        return item['speech']
     
     def _generator_list(self):
         for item in self._list[::-1]:
             yield item
 
     @staticmethod
-    def pop(self, generated_list):
+    def pop(generated_list):
         try:
             return next(generated_list)
         except StopIteration as e:
@@ -35,7 +39,7 @@ class KnowledgeManager():
 
     def __str__(self) :
         return str(self._list)
-    
+
 class KnowledgeManagerHelper():
 
     def __init__(self, knowledge_manager) :
@@ -49,3 +53,15 @@ class KnowledgeManagerHelper():
             if KnowledgeManager.pop(generated_list)['backchannel']:
                 return True
         return False
+    
+    def is_introduce(self):
+        if len(self.knowledge_manager) > 1:
+            generated_list = self.knowledge_manager._generator_list()
+            if KnowledgeManager.pop(generated_list)['state'] == UtteranceType.ROBOT.value:
+                print("here1")
+                item = KnowledgeManager.pop(generated_list)
+                print("here2")
+                if item['state'] == UtteranceType.INIT.value:
+                    print("here3")
+                    return True, item['speech']
+        return False, ""

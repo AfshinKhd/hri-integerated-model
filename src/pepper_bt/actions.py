@@ -28,14 +28,15 @@ class ShowPainting(py_trees.behaviour.Behaviour):
         return py_trees.common.Status.SUCCESS
     
 
-class RobotStartSpeaking(py_trees.behaviour.Behaviour):
+class RobotStartsSpeaking(py_trees.behaviour.Behaviour):
 
-    def __init__(self, pepper, message):
-        super(RobotStartSpeaking,self).__init__(name = "Robot Is Speaking")
+    def __init__(self, pepper,knowledge_manager, name="Robot Starts Speaking"):
+        super(RobotStartsSpeaking,self).__init__(name = name)
         self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
         self.pepper = pepper
+        self.knowledge_manager = knowledge_manager
         self.blackboard = py_trees.Blackboard()
-        self.msg = message
+
 
     def initialise(self):
         self.logger.debug("[%s::initialise()]" % self.__class__.__name__)
@@ -45,11 +46,12 @@ class RobotStartSpeaking(py_trees.behaviour.Behaviour):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
 
         # Gesture 
-        self.pepper.present_gesture()
+        #self.pepper.present_gesture()
         # Speech
-        self.blackboard.set(BlackboardItems.SPEAKING_IS_RUNNING,True,overwrite=True)
-        self.pepper.say(self.msg)
-        self.blackboard.set(BlackboardItems.SPEAKING_IS_RUNNING,False,overwrite=True)
+        item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
+        self.blackboard.set(BlackboardItems.SPEAKING_IS_RUNNING.value,True,overwrite=True)
+        self.pepper.say(KnowledgeManager.get_item_speech(item))
+        self.blackboard.set(BlackboardItems.SPEAKING_IS_RUNNING.value,False,overwrite=True)
 
         return py_trees.common.Status.SUCCESS
     
@@ -77,7 +79,7 @@ class EngageUser(py_trees.behaviour.Behaviour):
         speech.say(const.PRESENTATION_HELLO)
         # Gesture
         self.pepper.present_gesture()
-     
+        
         if self.pepper.tablet_show_web():           
             # Waiting for action of user
             app = self.pepper.tablet_touch_handling()
@@ -86,7 +88,7 @@ class EngageUser(py_trees.behaviour.Behaviour):
             if selected_painting is None :
                 return py_trees.common.Status.FAILURE
             else:
-                self.blackboard.set(BlackboardItems.SELECTED_PAINTING, selected_painting, overwrite=True)
+                self.blackboard.set(BlackboardItems.SELECTED_PAINTING.value, selected_painting, overwrite=True)
                 return py_trees.common.Status.SUCCESS
         else:
             return py_trees.common.Status.FAILURE
@@ -98,12 +100,12 @@ class EngageUser(py_trees.behaviour.Behaviour):
 
 class RobotTakesTurn(py_trees.behaviour.Behaviour):
 
-    def __init__(self, pepper, knowedge_manager,name="Robot Takes Turn"):
+    def __init__(self, pepper, knowledge_manager, name="Robot Takes Turn"):
         super(RobotTakesTurn,self).__init__(name = name)
         self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
         self.pepper = pepper
-        self.knowedge_manager = knowedge_manager
-        print("knowedge_manager is \n",str(knowedge_manager))
+        self.knowledge_manager = knowledge_manager
+        print("knowledge_manager is \n",str(knowledge_manager))
         self.blackboard = py_trees.Blackboard()
 
     def initialise(self):
@@ -113,9 +115,9 @@ class RobotTakesTurn(py_trees.behaviour.Behaviour):
     def update(self):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
 
-        self.knowedge_manager.add(UtteranceType.ROBOT, dialog=Backchannel.CONFIRM, backchannel=True)
+        self.knowledge_manager.add_item(UtteranceType.ROBOT, dialog=Backchannel.CONFIRM.value, backchannel=True)
         self.pepper.set_speech_speed(75)
-        self.pepper.say(Backchannel.CONFIRM)
+        self.pepper.say(Backchannel.CONFIRM.value)
         self.pepper.reset_speach_speed()
 
         time.sleep(3)
@@ -129,12 +131,12 @@ class RobotTakesTurn(py_trees.behaviour.Behaviour):
 
 class ProcessUserInput(py_trees.behaviour.Behaviour):
 
-    def __init__(self, pepper, knowedge_manager, name="Process User Input"):
+    def __init__(self, pepper, knowledge_manager, name="Process User Input"):
         super(ProcessUserInput,self).__init__(name = name)
         self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
         self.pepper = pepper
-        self.knowedge_manager = knowedge_manager
-        print("knowedge_manager : \n", knowedge_manager)
+        self.knowledge_manager = knowledge_manager
+        print("knowledge_manager : \n", knowledge_manager)
         self.blackboard = py_trees.Blackboard()
 
     def initialise(self):
@@ -144,9 +146,9 @@ class ProcessUserInput(py_trees.behaviour.Behaviour):
     def update(self):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
         
-        # if len(self.knowedge_manager) == 0:
+        # if len(self.knowledge_manager) == 0:
         #     dialog = "Selected Painting is " + self.blackboard.get(BlackboardItems.SELECTED_PAINTING)
-        #     self.knowedge_manager.add(UtteranceType.INIT, dialog, backchannel=False)
+        #     self.knowledge_manager.add(UtteranceType.INIT, dialog, backchannel=False)
 
         # Todo: In NLP it works
 
@@ -159,12 +161,12 @@ class ProcessUserInput(py_trees.behaviour.Behaviour):
 
 class ReactUserInput(py_trees.behaviour.Behaviour):
 
-    def __init__(self, pepper, knowedge_manager, name="Process User Input"):
+    def __init__(self, pepper, knowledge_manager, name="Process User Input"):
         super(ReactUserInput,self).__init__(name = name)
         self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
         self.pepper = pepper
-        self.knowedge_manager = knowedge_manager
-        print("knowedge_manager : \n", knowedge_manager)
+        self.knowledge_manager = knowledge_manager
+        print("knowledge_manager : \n", knowledge_manager)
         self.blackboard = py_trees.Blackboard()
 
     def initialise(self):
@@ -174,11 +176,13 @@ class ReactUserInput(py_trees.behaviour.Behaviour):
     def update(self):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
         
-        helper = KnowledgeManagerHelper(self.knowedge_manager)
+        helper = KnowledgeManagerHelper(self.knowledge_manager)
 
         if helper.is_initial():
-            dialog = "Selected Painting is " + self.blackboard.get(BlackboardItems.SELECTED_PAINTING)
-            self.knowedge_manager.add(UtteranceType.INIT, dialog, backchannel=False)
+            print ("helper is intial")
+            dialog = "Selected Painting is " + ("" if self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value) == None else self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value))
+            self.knowledge_manager.add_item(UtteranceType.INIT, dialog, backchannel=False)
+            print(str(self.knowledge_manager))
 
 
         return py_trees.common.Status.SUCCESS
@@ -204,7 +208,38 @@ class EnsureUserAttention(py_trees.behaviour.Behaviour):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
         
         self.pepper.speech_gesture()
-        time.sleep(.5)
+        #time.sleep(.5)
+
+        return py_trees.common.Status.SUCCESS
+
+    
+    def terminate(self, new_status):
+        self.logger.debug("[%s::terminate()]" % self.__class__.__name__)
+
+
+class EnsurePositiveUnderstanding(py_trees.behaviour.Behaviour):
+
+    def __init__(self, pepper, knowledge_manager, name="Ensure Positive Understanding"):
+        super(EnsurePositiveUnderstanding,self).__init__(name = name)
+        self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
+        self.pepper = pepper
+        self.knowledge_manager = knowledge_manager
+        self.blackboard = py_trees.Blackboard()
+
+    def initialise(self):
+        self.logger.debug("[%s::initialise()]" % self.__class__.__name__)
+
+
+    def update(self):
+        self.logger.debug("[%s::update()]" % self.__class__.__name__)
+        
+        helper = KnowledgeManagerHelper(self.knowledge_manager)
+        _is_introduce, speech = helper.is_introduce()
+        if _is_introduce:
+            self.pepper.set_speech_speed(75)
+            self.pepper.say(speech)
+            self.pepper.reset_speach_speed()
+            time.sleep(2)
 
         return py_trees.common.Status.SUCCESS
 

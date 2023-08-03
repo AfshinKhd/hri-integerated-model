@@ -67,6 +67,7 @@ class Pepper():
             print ("Can't connect to Naoqi at ip \"" + args.ip + "\" on port " + str(args.port) +".\n"
                 "Please check your script arguments. Run with -h option for help.")
             sys.exit(1)      
+      
 
     def listen(self):
         if True:
@@ -301,6 +302,7 @@ class Pepper():
         except RuntimeError:
            print ("tablet connection has error to connect")
            sys.exit(1)
+        
 
     def _touch_dwon_feedback(self, app):
         try:

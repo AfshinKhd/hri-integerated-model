@@ -22,7 +22,7 @@ def pre_tick_handler(behaviour_tree) :
 
 
 
-def create_tree(pepper, knowedge_manager) :
+def create_tree(pepper, knowledge_manager) :
     root = py_trees.composites.Sequence(name="Present Poster")
 
 
@@ -46,7 +46,7 @@ def create_tree(pepper, knowedge_manager) :
     # Todo: I think dummy ?
     #user_is_speaking = py_trees.behaviours.Success("User is Speaking")
     user_turn = py_trees.behaviours.Success("User is Allowed Turn")
-    process_user_input = ProcessUserInput(pepper, knowedge_manager)
+    process_user_input = ProcessUserInput(pepper, knowledge_manager)
     attention_evidence = py_trees.behaviours.Failure("Give Evidence of Attention,etc")
     user_initiative.add_children([user_turn,process_user_input,attention_evidence])
 
@@ -55,24 +55,25 @@ def create_tree(pepper, knowedge_manager) :
     robot_initiative.add_children([robot_turn,execute_presentation])
  
     # Condition
-    robot_is_speaking = py_trees.behaviours.Success("Robot is Speaking")
+    robot_is_speaking = py_trees.behaviours.Failure("Robot is Speaking")
     # Action
-    robot_takes_turn = RobotTakesTurn(pepper, "Robot Takes Turn")
+    robot_takes_turn = RobotTakesTurn(pepper, knowledge_manager, "Robot Takes Turn")
     robot_turn.add_children([robot_is_speaking, robot_takes_turn])
 
     # Todo : ????
-    react_user_input = ReactUserInput(pepper, knowedge_manager, "React to User Input")
+    react_user_input = ReactUserInput(pepper, knowledge_manager, "React to User Input")
     # #react_user_input = py_trees.composites.Selector(name="React to User Input")
     ensure_joint_attention = py_trees.composites.Sequence(name="Ensure Joint Attention")
     deliver_presentation = py_trees.composites.Sequence(name="Deliver Presentation")
-    execute_presentation.add_children([react_user_input, deliver_presentation])
+    execute_presentation.add_children([react_user_input, ensure_joint_attention, deliver_presentation])
 
     ensure_user_attention = EnsureUserAttention(pepper, "Ensure User Atttention")
     ensure_joint_attention.add_child(ensure_user_attention)
 
     # Action
-    robot_start_speaking = RobotStartSpeaking(pepper, "Speak (From Pepper)")
-    deliver_presentation.add_child(robot_start_speaking)
+    robot_starts_speaking = RobotStartsSpeaking(pepper, knowledge_manager, "Robot Starts Speaking")
+    ensure_positive_understanding = EnsurePositiveUnderstanding(pepper,knowledge_manager, "Ensure Positive Understanding")
+    deliver_presentation.add_children([ensure_positive_understanding, robot_starts_speaking])
 
 
     root.add_child(establish_enagagment)
@@ -84,17 +85,17 @@ def create_tree(pepper, knowedge_manager) :
 def main():
     print("Pepper Starts Detection...")
     pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
-    knowedge_manager = KnowledgeManager()
+    knowledge_manager = KnowledgeManager()
     # pepper_detect_control = PepperDetectionControl()
     # PepperPresentationControl()
     # pepper_detect_control.cycle()
     # print(pepper_detect_control.current_state)
     # print(pepper_detect_control.send('cycle'))
-    behaviour_tree = PepperBTControl(pepper, knowedge_manager)
+    behaviour_tree = PepperBTControl(pepper, knowledge_manager)
     #fsm_control = PepperFSMControl()
 
 
-    for _unused_i in range(0, 2):
+    for _unused_i in range(0, 1):
         try:
             #py_trees.console.read_single_keypress()
             # behaviour_tree.tick()
@@ -115,9 +116,9 @@ def main():
 
     
 
-def PepperBTControl(pepper, knowedge_manager):
+def PepperBTControl(pepper, knowledge_manager):
     
-    root = create_tree(pepper, knowedge_manager)
+    root = create_tree(pepper, knowledge_manager)
     py_trees.logging.level = py_trees.logging.Level.DEBUG
 
     print(py_trees.display.print_ascii_tree(root))

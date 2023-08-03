@@ -30,15 +30,15 @@ class UserEngaged(py_trees.behaviour.Behaviour):
         self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
         self.blackboard = py_trees.Blackboard()
         # After FSM, the engaged status in BT should be changed from None to True
-        if self.blackboard.get(BlackboardItems.USER_ENGAGED) is None:
-            self.blackboard.set(BlackboardItems.USER_ENGAGED, value=True, overwrite=True)
+        if self.blackboard.get(BlackboardItems.USER_ENGAGED.value) is None:
+            self.blackboard.set(BlackboardItems.USER_ENGAGED.value, value=True, overwrite=True)
 
 
 
     def update(self) :
-        self.logger.debug("[%s::update()] - user engaged: %r" % (self.__class__.__name__ , self.blackboard.get(BlackboardItems.USER_ENGAGED)))
-        if self.blackboard.get(BlackboardItems.USER_ENGAGED):
-            if self.blackboard.get(BlackboardItems.USER_ENGAGED) != None:
+        self.logger.debug("[%s::update()] - user engaged: %r" % (self.__class__.__name__ , self.blackboard.get(BlackboardItems.USER_ENGAGED.value)))
+        if self.blackboard.get(BlackboardItems.USER_ENGAGED.value):
+            if self.blackboard.get(BlackboardItems.PAINTING_NAME.value) != None:
                 return py_trees.common.Status.SUCCESS
             else:
                 return py_trees.common.Status.FAILURE
