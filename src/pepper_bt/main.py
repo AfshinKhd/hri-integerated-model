@@ -17,6 +17,8 @@ import py_trees
 import rospy
 from std_msgs.msg import String
 
+_stop_bt = False
+
 def pre_tick_handler(behaviour_tree) :
     print("\n--------- Run %s ---------\n" % behaviour_tree.count)
 
@@ -40,14 +42,14 @@ def create_tree(pepper, knowledge_manager) :
 
     user_initiative = py_trees.composites.Sequence(name="User's Initiative")
     robot_initiative = py_trees.composites.Sequence(name="Robot's Initiative")
-    no_one_initiative = py_trees.behaviours.Failure("No One has Initiative")
+    no_one_initiative = NoOneInitiative(on_presentation_is_finished, pepper, knowledge_manager, "No One has Initiative")
     interact_with_user.add_children([user_initiative,robot_initiative,no_one_initiative])
  
     # Todo: I think dummy ?
     #user_is_speaking = py_trees.behaviours.Success("User is Speaking")
     # Condition
     user_turn = UserTurn(pepper, knowledge_manager, "User is Allowed Turn")
-    process_user_input = ProcessUserInput(pepper, knowledge_manager)
+    process_user_input = ProcessUserInput(pepper, knowledge_manager, "Process User Input")
     attention_evidence = GivieAttentionEvidance(pepper, knowledge_manager, "Give Evidence of Attention, etc")
     user_initiative.add_children([user_turn,process_user_input,attention_evidence])
 
@@ -73,8 +75,9 @@ def create_tree(pepper, knowledge_manager) :
 
     # Action
     robot_starts_speaking = RobotStartsSpeaking(pepper, knowledge_manager, "Robot Starts Speaking")
+    try_other_line = TryOtherLine(pepper, knowledge_manager, "Try Other Line")
     #ensure_positive_understanding = EnsurePositiveUnderstanding(pepper,knowledge_manager, "Ensure Positive Understanding")
-    deliver_presentation.add_child(robot_starts_speaking)
+    deliver_presentation.add_children([robot_starts_speaking, try_other_line])
 
 
     root.add_child(establish_enagagment)
@@ -82,6 +85,10 @@ def create_tree(pepper, knowledge_manager) :
 
     return root
 
+def on_presentation_is_finished(data_speech):
+    _stop_bt = True
+    save_speech_data(data_speech)
+    
 
 def main():
     print("Pepper Starts Detection...")
@@ -96,7 +103,9 @@ def main():
     #fsm_control = PepperFSMControl()
 
 
-    for _unused_i in range(0, 4):
+    for _unused_i in range(0, 6) :
+        if _stop_bt:
+            break
         try:
             #py_trees.console.read_single_keypress()
             # behaviour_tree.tick()

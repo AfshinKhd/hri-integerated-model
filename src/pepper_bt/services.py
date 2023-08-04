@@ -162,7 +162,10 @@ class Pepper():
             except Exception as e:
                 print("tablet_show_web function, error:",e)
                 return False
-
+            
+    def tablet_show_rate(self):
+        self.tablet_show_web(cfg.RATE_URL)
+       
     def tablet_hide_web(self):
          self.tablet_service.hideWebview()
     
@@ -206,21 +209,21 @@ class Pepper():
         print("[INFO]: Robot says: " + text)
 
     def set_speech_speed(self, speed = 80):
-        print("speed of speack is :",self.tts.getParameter("speed"))
         self.tts.setParameter("speed", speed)
+        print("speed of speack is :",self.tts.getParameter("speed"))
         
 
     def reset_speach_speed(self):
-        print("speed of speack is :",self.tts.getParameter("speed"))
         self.tts.resetSpeed()
+        print("speed of speack is :",self.tts.getParameter("speed"))
 
     def speech_gesture(self):
         names = list()
         times = list()
         keys = list()
         names.append("LElbowRoll")
-        times.append([1.01, 1.3, 1.6])
-        keys.append([-1.37289, -1.12923, -0.369652])
+        times.append([1.01, 1.3, 1.6, 1.9, 4.5])
+        keys.append([-1.37289, -1.12923, -0.369652 ,-0.379652, -0.379653])
         self.motion_service.angleInterpolation(names, keys, times, True)
 
         #self.motion_service.angleInterpolationWithSpeed(["RShoulderPitch", "RWristYaw", "RHand"], [0.8, 2.5, 1.0], 1.0)
@@ -308,37 +311,31 @@ class Pepper():
            sys.exit(1)
         
 
-    def _touch_dwon_feedback(self, app):
+    def _touch_down_feedback(self, app):
         try:
             session = app.session
             tabletService = session.service("ALTabletService")
-            painting = []
+            coordinate = []
             # Don't forget to disconnect the signal at the end
             signalID = 0
 
             # function called when the signal onTouchDown is triggered
             def callback(x, y):
                 print("coordinate are x: ", x, " y: ", y)
-                if x < 690 and x > 80:
-                    painting.append(const.judgment_of_cambyses_painting['name'])
-                elif x > 690 and x < 1680:
-                    painting.append(const.scream_painting['name'])
-                else:
-                    print("Dosn't exist painting on tablet")
+                coordinate.append({'x':x, 'y':y})
                 tabletService.onTouchDown.disconnect(signalID)
                 #app.stop()
                
-    
              # attach the callback function to onJSEvent signal
             signalID = tabletService.onTouchDown.connect(callback)
             #app.run()
             try:
-                while len(painting) == 0:    
+                while len(coordinate) == 0:    
                     time.sleep(.5)
             except KeyboardInterrupt:
                 print("Interrupted by user, stopping HumanGreeter")
                 return None
-            return painting[0]
+            return coordinate[0]
 
         except Exception as  e:
             print("Error was: ", e)

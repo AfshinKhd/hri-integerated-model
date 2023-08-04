@@ -4,7 +4,7 @@ import typing
 import py_trees
 from py_trees import common
 from pepper_bt.topics import Listening
-from pepper_bt.blackboard_util import BlackboardItems
+from pepper_bt.util import BlackboardItems
 
 # Todo: Delete
 # class PermitRobotSpeak(py_trees.behaviour.Behaviour):
@@ -87,11 +87,11 @@ class UserTurn(py_trees.behaviour.Behaviour):
         if len(self.knowledge_manager) == 0:
             return py_trees.common.Status.SUCCESS
             #self.blackboard.set(BlackboardItems.USERTURN, value=True, overwrite=True )
-        elif self.knowledge_manager.is_further_speech(item):
+        elif self.knowledge_manager.is_further_utterance(item):
 
             return py_trees.common.Status.SUCCESS
-        #elif 
-        # Todo: final step get rate
+        elif self.knowledge_manager.is_rate_utterance(item):
+            return py_trees.common.Status.SUCCESS
         else:
             return py_trees.common.Status.FAILURE
     

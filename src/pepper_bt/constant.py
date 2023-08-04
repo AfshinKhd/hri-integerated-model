@@ -5,11 +5,15 @@ The agonized face in the painting has become one of the most iconic images of ar
 seen as symbolizing the anxiety of the human condition.
 """
 
+# JUDGEMNT_OF_CAMBYSES_PAINTING_DESCRIBTION = """
+# Rubens painted a commissioned work depicting the story of Sisamnes, a corrupt judge in the 
+# Persian empire during Cambyses' reign. Completed between 1622 and 1626, the painting portrayed 
+# the moment when Cambyses, depicted in a dynamic pose, appointed Sisamnes' son, Otanes, as the new judge, 
+# placing his father's flayed skin as a canopy over the judge's seat as a reminder of the consequences of corruption.
+# """
+
 JUDGEMNT_OF_CAMBYSES_PAINTING_DESCRIBTION = """
-Rubens painted a commissioned work depicting the story of Sisamnes, a corrupt judge in the 
-Persian empire during Cambyses' reign. Completed between 1622 and 1626, the painting portrayed 
-the moment when Cambyses, depicted in a dynamic pose, appointed Sisamnes' son, Otanes, as the new judge, 
-placing his father's flayed skin as a canopy over the judge's seat as a reminder of the consequences of corruption.
+Rubens painted a commissioned work depicting the story of Sisamnes
 """
 
 SCREAM_PAINTING_URL = "https://upload.wikimedia.org/wikipedia/commons/f/f4/The_Scream.jpg"
@@ -31,3 +35,7 @@ THIS IS FURTHER INFORMATION ABOUT THE SCHREAM PAINTING
 JUDGEMNT_OF_CAMBYSES_PAINTING_FURTHER = """
 THIS IS FURTHER INFORMATION ABOUT THE JUDGEMENT OF CHABYSES PAINTING
 """
+
+GET_USER_FEEDBACK = "Please Give me a rate between 1 to 5"
+
+THANKS = "Thank you"
