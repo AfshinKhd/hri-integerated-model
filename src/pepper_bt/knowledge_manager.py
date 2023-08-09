@@ -8,6 +8,7 @@ class UtteranceType(Enum):
     FURTHER = "further"
     USER = "user"
     RATE = "rate"
+    FINISH = "finish" #finishing bt
 
 
 class KnowledgeManager():
@@ -67,6 +68,12 @@ class KnowledgeManager():
         if item == None:
             return False
         return item['state'] == UtteranceType.RATE.value
+    
+    @staticmethod
+    def is_finish_state(item):
+        if item == None:
+            return False
+        return item['state'] == UtteranceType.FINISH.value
      
     def _generator_list(self):
         for item in self._list[::-1]:

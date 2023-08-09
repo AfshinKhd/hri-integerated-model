@@ -17,129 +17,152 @@ import py_trees
 import rospy
 from std_msgs.msg import String
 
-_stop_bt = False
-
-def pre_tick_handler(behaviour_tree) :
-    print("\n--------- Run %s ---------\n" % behaviour_tree.count)
 
 
 
-def create_tree(pepper, knowledge_manager) :
-    root = py_trees.composites.Sequence(name="Present Poster")
+class Pepper_Run():
+    def __init__(self):
+        self.pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
+        self.knowledge_manager = KnowledgeManager()
+        self.behaviour_tree = self.PepperBTControl(self.pepper, self.knowledge_manager)
+
+        self._stop_bt = False
+
+        print("Pepper Starts Detection...")
+        self.run()
+        print("\nPepper Stop Presentation!\n")
+        
+        
+
+    def on_presentation_is_finished(self, data_speech):
+        print("on pressentation")
+        self._stop_bt = True  
+        save_speech_data(data_speech)  
+
+    def run(self):
+        for _unused_i in range(0, 10) :
+            if self._stop_bt:
+                print('break')
+                break
+            try:
+                #py_trees.console.read_single_keypress()
+                # behaviour_tree.tick()
+                print("START BEHAVIOUR TREE...")
+            # if fsm_control.is_detected_active():
+                self.behaviour_tree.tick()
+                
+                time.sleep(1)
+            except KeyboardInterrupt:
+                break
+        self.pepper.tablet_hide_web()
+        self.pepper.stand()
 
 
-    establish_enagagment = py_trees.composites.Selector(name="Stablish Engagment")
-    # Conditon
-    user_engaged = UserEngaged("User Enagaged")
-    # Action
-    engage_user = EngageUser(pepper, "Engage User")
-    #engage_user = py_trees.behaviours.Success("Enagage User")
-    #engage_user = py_trees.behaviours.Running(name="Running")
-    establish_enagagment.add_children([user_engaged,engage_user])
+    def PepperBTControl(self, pepper, knowledge_manager):
+    
+        root = self.create_tree(pepper, knowledge_manager)
+        py_trees.logging.level = py_trees.logging.Level.DEBUG
+
+        print(py_trees.display.print_ascii_tree(root))
+        # Visualized the behavior tree - path:./catkin_ws
+        print(py_trees.display.render_dot_tree(root))
+
+        behaviour_tree = py_trees.trees.BehaviourTree(root)
+        behaviour_tree.add_pre_tick_handler(self.pre_tick_handler)
+        behaviour_tree.setup(timeout=15)
+
+        return behaviour_tree
+    
+
+    def create_tree(self, pepper, knowledge_manager) :
+
+        root = py_trees.composites.Sequence(name="Present Poster")
+
+        establish_enagagment = py_trees.composites.Selector(name="Stablish Engagment")
+        # Conditon
+        user_engaged = UserEngaged("User Enagaged")
+        # Action
+        engage_user = EngageUser(pepper, "Engage User")
+        #engage_user = py_trees.behaviours.Success("Enagage User")
+        #engage_user = py_trees.behaviours.Running(name="Running")
+        establish_enagagment.add_children([user_engaged,engage_user])
 
 
-    interact_with_user = py_trees.composites.Selector(name="Interact with User")
+        interact_with_user = py_trees.composites.Selector(name="Interact with User")
 
-    user_initiative = py_trees.composites.Sequence(name="User's Initiative")
-    robot_initiative = py_trees.composites.Sequence(name="Robot's Initiative")
-    no_one_initiative = NoOneInitiative(on_presentation_is_finished, pepper, knowledge_manager, "No One has Initiative")
-    interact_with_user.add_children([user_initiative,robot_initiative,no_one_initiative])
- 
-    # Todo: I think dummy ?
-    #user_is_speaking = py_trees.behaviours.Success("User is Speaking")
-    # Condition
-    user_turn = UserTurn(pepper, knowledge_manager, "User is Allowed Turn")
-    process_user_input = ProcessUserInput(pepper, knowledge_manager, "Process User Input")
-    attention_evidence = GivieAttentionEvidance(pepper, knowledge_manager, "Give Evidence of Attention, etc")
-    user_initiative.add_children([user_turn,process_user_input,attention_evidence])
+        user_initiative = py_trees.composites.Sequence(name="User's Initiative")
+        robot_initiative = py_trees.composites.Sequence(name="Robot's Initiative")
+        no_one_initiative = NoOneInitiative(self.on_presentation_is_finished, pepper, knowledge_manager, "No One has Initiative")
+        interact_with_user.add_children([user_initiative,robot_initiative,no_one_initiative])
+    
+        # Todo: I think dummy ?
+        #user_is_speaking = py_trees.behaviours.Success("User is Speaking")
+        # Condition
+        user_turn = UserTurn(pepper, knowledge_manager, "User is Allowed Turn")
+        process_user_input = ProcessUserInput(pepper, knowledge_manager, "Process User Input")
+        attention_evidence = GivieAttentionEvidance(pepper, knowledge_manager, "Give Evidence of Attention, etc")
+        user_initiative.add_children([user_turn,process_user_input,attention_evidence])
 
-    robot_turn = py_trees.composites.Selector(name="Robot Has Turn")
-    execute_presentation = py_trees.composites.Sequence(name="Execute Presentation")
-    robot_initiative.add_children([robot_turn,execute_presentation])
- 
-    # Condition
-    robot_is_speaking = py_trees.behaviours.Failure("Robot is Speaking")
-    # Action
-    robot_takes_turn = RobotTakesTurn(pepper, knowledge_manager, "Robot Takes Turn")
-    robot_turn.add_children([robot_is_speaking, robot_takes_turn])
+        robot_turn = py_trees.composites.Selector(name="Robot Has Turn")
+        execute_presentation = py_trees.composites.Sequence(name="Execute Presentation")
+        robot_initiative.add_children([robot_turn,execute_presentation])
+    
+        # Condition
+        robot_is_speaking = py_trees.behaviours.Failure("Robot is Speaking")
+        # Action
+        robot_takes_turn = RobotTakesTurn(pepper, knowledge_manager, "Robot Takes Turn")
+        robot_turn.add_children([robot_is_speaking, robot_takes_turn])
 
-    # Todo : ????
-    react_user_input = ReactUserInput(pepper, knowledge_manager, "React to User Input")
-    # #react_user_input = py_trees.composites.Selector(name="React to User Input")
-    ensure_joint_attention = py_trees.composites.Sequence(name="Ensure Joint Attention")
-    deliver_presentation = py_trees.composites.Sequence(name="Deliver Presentation")
-    execute_presentation.add_children([react_user_input, ensure_joint_attention, deliver_presentation])
+        # Todo : ????
+        react_user_input = ReactUserInput(pepper, knowledge_manager, "React to User Input")
+        # #react_user_input = py_trees.composites.Selector(name="React to User Input")
+        ensure_joint_attention = py_trees.composites.Sequence(name="Ensure Joint Attention")
+        deliver_presentation = py_trees.composites.Sequence(name="Deliver Presentation")
+        execute_presentation.add_children([react_user_input, ensure_joint_attention, deliver_presentation])
 
-    ensure_user_attention = EnsureUserAttention(pepper, "Ensure User Atttention")
-    ensure_joint_attention.add_child(ensure_user_attention)
+        ensure_user_attention = EnsureUserAttention(pepper, "Ensure User Atttention")
+        ensure_joint_attention.add_child(ensure_user_attention)
 
-    # Action
-    robot_starts_speaking = RobotStartsSpeaking(pepper, knowledge_manager, "Robot Starts Speaking")
-    try_other_line = TryOtherLine(pepper, knowledge_manager, "Try Other Line")
-    #ensure_positive_understanding = EnsurePositiveUnderstanding(pepper,knowledge_manager, "Ensure Positive Understanding")
-    deliver_presentation.add_children([robot_starts_speaking, try_other_line])
+        # Action
+        robot_starts_speaking = RobotStartsSpeaking(pepper, knowledge_manager, "Robot Starts Speaking")
+        try_other_line = TryOtherLine(pepper, knowledge_manager, "Try Other Line")
+        #ensure_positive_understanding = EnsurePositiveUnderstanding(pepper,knowledge_manager, "Ensure Positive Understanding")
+        deliver_presentation.add_children([robot_starts_speaking, try_other_line])
 
 
-    root.add_child(establish_enagagment)
-    root.add_child(interact_with_user)
+        root.add_child(establish_enagagment)
+        root.add_child(interact_with_user)
 
-    return root
+        return root
 
-def on_presentation_is_finished(data_speech):
-    _stop_bt = True
-    save_speech_data(data_speech)
+
+    def pre_tick_handler(self, behaviour_tree) :
+        print("\n--------- Run %s ---------\n" % behaviour_tree.count)
+
+
+
+
+
+
     
 
 def main():
-    print("Pepper Starts Detection...")
-    pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
-    knowledge_manager = KnowledgeManager()
+    Pepper_Run()
+    
     # pepper_detect_control = PepperDetectionControl()
     # PepperPresentationControl()
     # pepper_detect_control.cycle()
     # print(pepper_detect_control.current_state)
     # print(pepper_detect_control.send('cycle'))
-    behaviour_tree = PepperBTControl(pepper, knowledge_manager)
+    
     #fsm_control = PepperFSMControl()
 
 
-    for _unused_i in range(0, 6) :
-        if _stop_bt:
-            break
-        try:
-            #py_trees.console.read_single_keypress()
-            # behaviour_tree.tick()
-            print("START BEHAVIOUR TREE...")
-           # if fsm_control.is_detected_active():
-            behaviour_tree.tick()
-            
-            time.sleep(1)
-        except KeyboardInterrupt:
-            break
-        
-
-    pepper.tablet_hide_web()
-    pepper.stand()
     
-    
-    print("\nPepper Stop Presentation!\n")
 
     
 
-def PepperBTControl(pepper, knowledge_manager):
-    
-    root = create_tree(pepper, knowledge_manager)
-    py_trees.logging.level = py_trees.logging.Level.DEBUG
 
-    print(py_trees.display.print_ascii_tree(root))
-    # Visualized the behavior tree - path:./catkin_ws
-    print(py_trees.display.render_dot_tree(root))
-
-    behaviour_tree = py_trees.trees.BehaviourTree(root)
-    behaviour_tree.add_pre_tick_handler(pre_tick_handler)
-    behaviour_tree.setup(timeout=15)
-
-    return behaviour_tree
 
 
 class PepperFSMControl():
@@ -241,7 +264,7 @@ class PepperDetectionControl(StateMachine):
     def on_enter_people_detected(self):
         print("====enter people detected STATE")
         # PepperPresentationControl()
-        behaviour_tree = PepperBTControl()
+        behaviour_tree = Pepper_Run.PepperBTControl()
         behaviour_tree.tick()
 
 

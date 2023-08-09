@@ -7,7 +7,7 @@ import pepper_bt.constant as const
 import pepper_bt.topics as topics
 import rospy
 
-#pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
+# pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
 #pepper.tablet_services()
 #pepper.presentation_gesture()
 #pepper.tablet_show_web("")
@@ -15,7 +15,8 @@ import rospy
 # pepper.listen()
 
 #pepper.say(const.SCREAM_PAINTING)
-
+# pepper.tablet_show_rate()
+# coordinate = pepper._touch_down_feedback(lower_x=0, upper_x=1200, lower_y=0 , upper_y=800)
 p.main()
 
 

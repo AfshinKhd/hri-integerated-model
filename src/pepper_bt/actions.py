@@ -85,13 +85,14 @@ class EngageUser(py_trees.behaviour.Behaviour):
         
         if self.pepper.tablet_show_web():           
             # Waiting for action of user
-            app = self.pepper.tablet_touch_handling()
-            coordinate = self.pepper._touch_down_feedback(app)
+            #app = self.pepper.tablet_touch_handling()
+   
+            coordinate = self.pepper._touch_down_feedback(lower_x=80, upper_x=1680, lower_y=0 , upper_y=1020)
 
             # Todo: dynamic numbers
-            if coordinate['x'] < 690 and coordinate['x'] > 80:
+            if coordinate['x'] < 690 :
                 selected_painting = const.judgment_of_cambyses_painting['name']
-            elif coordinate['x'] > 690 and coordinate['x']< 1680:
+            elif coordinate['x'] > 690 :
                 selected_painting = const.scream_painting['name']
             else:
                 print("coordinate is wrong!")
@@ -149,7 +150,9 @@ class RobotTakesTurn(py_trees.behaviour.Behaviour):
                     return py_trees.common.Status.SUCCESS
                 else:
                     dialog = const.GET_USER_FEEDBACK
-                    self.knowledge_manager.add_item(UtteranceType.RATE, dialog, get_next_tag(self.knowledge_manager.get_tag(item), True), backchannel=False)
+                    _tag = get_next_tag(self.knowledge_manager.get_tag(item))
+                    self.knowledge_manager.add_item(UtteranceType.RATE, "", _tag, backchannel=False)
+                    self.knowledge_manager.add_item(UtteranceType.ROBOT, dialog, _tag, backchannel=False)
             # Todo else of elif ??
             self._say(dialog)
             return py_trees.common.Status.FAILURE
@@ -189,6 +192,7 @@ class ProcessUserInput(py_trees.behaviour.Behaviour):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
         
         item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
+        helper = KnowledgeManagerHelper(self.knowledge_manager)
         if self.knowledge_manager.is_further_utterance(item):
             # Todo, say yes or no:
             dialog = const.YES_NO
@@ -202,14 +206,15 @@ class ProcessUserInput(py_trees.behaviour.Behaviour):
             self.knowledge_manager.add_item(UtteranceType.USER, _user_fb, self.knowledge_manager.get_tag(item), backchannel=False)
             self.knowledge_manager.add_item(UtteranceType.ROBOT, "Your Answer is yes", self.knowledge_manager.get_tag(item), backchannel=False)
         # Todo elif final step say thank put the rate in the file + utterance 
-        elif self.knowledge_manager.is_rate_utterance(item):
-            # Todo: show a web
+        elif helper.is_rate_response():
+
             self.pepper.tablet_show_rate()
-            app = self.pepper.tablet_touch_handling()
-            coordinate = self.pepper._touch_down_feedback(app)
-            print(coordinate)
-             # Todo rate handling 
-            self.knowledge_manager.add_item(UtteranceType.USER, "4", self.knowledge_manager.get_tag(item), backchannel=False)
+            coordinate = self.pepper._touch_down_feedback(lower_x=160, upper_x=1590, lower_y=370 , upper_y=680)
+            _rate = self.get_user_rate(coordinate)
+            print("rate is :", _rate)
+            self.pepper.tablet_hide_web()
+             # Todo: rate handling function
+            self.knowledge_manager.add_item(UtteranceType.USER, _rate, self.knowledge_manager.get_tag(item), backchannel=False)
             self.knowledge_manager.add_item(UtteranceType.ROBOT, const.THANKS, self.knowledge_manager.get_tag(item), backchannel=False)
         else:
             dialog = "Selected Painting is " + ("" if self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value) == None else self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value))
@@ -220,6 +225,25 @@ class ProcessUserInput(py_trees.behaviour.Behaviour):
         print(str(self.knowledge_manager))
 
         return py_trees.common.Status.SUCCESS
+    
+    def get_user_rate(self, coordinate):
+        if 160 < coordinate['x'] < 430:
+            return 1
+        elif 430 < coordinate['x'] < 700:
+            return 2
+        elif 700 < coordinate['x'] < 970:
+            return 3
+        elif 970 < coordinate['x'] < 1240:
+            return 4
+        elif 1240 < coordinate['x'] < 1510:
+            return 5
+        else:
+            print("something goes wrong!")
+        
+        return 0
+
+        # if coordinate.x 
+
     
     def _say(self, dialog):
         self.pepper.set_speech_speed(80)
@@ -351,12 +375,17 @@ class GivieAttentionEvidance(py_trees.behaviour.Behaviour):
         
 
         item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
+        helper = KnowledgeManagerHelper(self.knowledge_manager)
         self.pepper.set_speech_speed(75)
         self.pepper.say(KnowledgeManager.get_item_utterance(item))
         self.pepper.reset_speach_speed()
 
+
+
         self.blackboard.set(BlackboardItems.ROBOT_IS_SPEAKING.value, value=True, overwrite=True )
         time.sleep(2)
+        if helper.is_rate_response():
+            self.knowledge_manager.add_item(UtteranceType.FINISH, "", self.knowledge_manager.get_tag(item), backchannel=False)
 
         return py_trees.common.Status.SUCCESS
 
@@ -372,7 +401,7 @@ class NoOneInitiative(py_trees.behaviour.Behaviour):
         self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
         self.pepper = pepper
         self.knowledge_manager = knowledge_manager
-        self.callback = callable
+        self.callback = callback
         self.blackboard = py_trees.Blackboard()
 
     def initialise(self):
@@ -382,7 +411,16 @@ class NoOneInitiative(py_trees.behaviour.Behaviour):
     def update(self):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)   
 
-        self.callback(self.knowledge_manager.get_list())
+        item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
+        helper = KnowledgeManagerHelper(self.knowledge_manager)
+        print(str(self.knowledge_manager))
+        if helper.is_rate_response():
+            if self.knowledge_manager.is_finish_state(item):
+                self.callback(self.knowledge_manager.get_list())
+                return py_trees.common.Status.SUCCESS
+            return py_trees.common.Status.FAILURE
+        
+        
 
         return py_trees.common.Status.SUCCESS
 

@@ -282,6 +282,9 @@ class Pepper():
             return False
 
     def tablet_show_image(self,img_url):
+        """
+        tablet specifications: Resolution: 1280*800
+        """
         try:
             self.tabletService.enableWifi()
             #tabletService.playVideo("http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4")
@@ -303,6 +306,9 @@ class Pepper():
         return HumanGreeter(app)
     
     def tablet_touch_handling(self):
+        """
+        If run and stop the application is needed, this function can be used
+        """
         try:
            self.app.start()
            return self.app
@@ -311,10 +317,53 @@ class Pepper():
            sys.exit(1)
         
 
-    def _touch_down_feedback(self, app):
+    def _touch_down_feedback(self, **coordination_limit):
+        if coordination_limit is None:
+            lower_x = 0  
+            upper_x = 1700 
+            lower_y = 0 
+            upper_y = 1024
+        else:
+            lower_x = coordination_limit['lower_x']
+            upper_x = coordination_limit['upper_x'] 
+            lower_y = coordination_limit['lower_y']
+            upper_y = coordination_limit['upper_y']
         try:
-            session = app.session
-            tabletService = session.service("ALTabletService")
+            #session = app.session
+            #tabletService = session.service("ALTabletService")
+            coordinate = []
+            # Don't forget to disconnect the signal at the end
+            signalID = 0
+            # function called when the signal onTouchDown is triggered
+            def callback(x, y):
+                print("coordinate are x: ", x, " y: ", y)
+                if lower_x < x and upper_x > x and lower_y < y and upper_y > y:
+                    coordinate.append({'x':x, 'y':y})
+                    self.tablet_service.onTouchDown.disconnect(signalID)
+                else:
+                    print("wrong click")
+                
+                #app.stop()
+               
+             # attach the callback function to onJSEvent signal
+            signalID = self.tablet_service.onTouchDown.connect(callback)
+            #app.run()
+            try:
+                while len(coordinate) == 0:    
+                    time.sleep(.5)
+            except KeyboardInterrupt:
+                print("Interrupted by user, stopping HumanGreeter")
+                return None
+            return coordinate[0]
+
+        except Exception as  e:
+            print("Error was: ", e)
+
+    def ftouch_down_feedback(self):
+        print("here")
+        try:
+            #session = app.session
+            #tabletService = session.service("ALTabletService")
             coordinate = []
             # Don't forget to disconnect the signal at the end
             signalID = 0
@@ -323,11 +372,11 @@ class Pepper():
             def callback(x, y):
                 print("coordinate are x: ", x, " y: ", y)
                 coordinate.append({'x':x, 'y':y})
-                tabletService.onTouchDown.disconnect(signalID)
+                self.tablet_service.onTouchDown.disconnect(signalID)
                 #app.stop()
                
              # attach the callback function to onJSEvent signal
-            signalID = tabletService.onTouchDown.connect(callback)
+            signalID = self.tablet_service.onTouchDown.connect(callback)
             #app.run()
             try:
                 while len(coordinate) == 0:    

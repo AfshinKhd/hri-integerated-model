@@ -5,6 +5,7 @@ import py_trees
 from py_trees import common
 from pepper_bt.topics import Listening
 from pepper_bt.util import BlackboardItems
+from knowledge_manager import KnowledgeManagerHelper
 
 # Todo: Delete
 # class PermitRobotSpeak(py_trees.behaviour.Behaviour):
@@ -84,13 +85,16 @@ class UserTurn(py_trees.behaviour.Behaviour):
         self.logger.debug("  %s [Listening::update()]" % self.__class__.__name__)
         # This means only user selected the painting and there is no dialogs yet
         item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
+        helper = KnowledgeManagerHelper(self.knowledge_manager)
+
         if len(self.knowledge_manager) == 0:
             return py_trees.common.Status.SUCCESS
             #self.blackboard.set(BlackboardItems.USERTURN, value=True, overwrite=True )
         elif self.knowledge_manager.is_further_utterance(item):
-
             return py_trees.common.Status.SUCCESS
-        elif self.knowledge_manager.is_rate_utterance(item):
+        elif helper.is_rate_response():
+            if self.knowledge_manager.is_finish_state(item):
+                return py_trees.common.Status.FAILURE
             return py_trees.common.Status.SUCCESS
         else:
             return py_trees.common.Status.FAILURE

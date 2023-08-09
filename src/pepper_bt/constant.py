@@ -36,6 +36,6 @@ JUDGEMNT_OF_CAMBYSES_PAINTING_FURTHER = """
 THIS IS FURTHER INFORMATION ABOUT THE JUDGEMENT OF CHABYSES PAINTING
 """
 
-GET_USER_FEEDBACK = "Please Give me a rate between 1 to 5"
+GET_USER_FEEDBACK = "Please Give me a rate between one to five!"
 
 THANKS = "Thank you"
