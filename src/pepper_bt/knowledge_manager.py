@@ -25,11 +25,6 @@ class KnowledgeManager():
     def get_list(self):
         return self._list
     
-    def get_init_utterance(self):
-        for item in self._list:
-            if item.get("state") == UtteranceType.INIT.value:
-                return item.get("utterance")
-        return ""
 
     @staticmethod
     def get_item_utterance(item):
@@ -74,6 +69,12 @@ class KnowledgeManager():
         if item == None:
             return False
         return item['state'] == UtteranceType.FINISH.value
+    
+    @staticmethod
+    def is_init_state(item):
+        if item == None:
+            return False
+        return item['state'] == UtteranceType.INIT.value
      
     def _generator_list(self):
         for item in self._list[::-1]:
@@ -96,6 +97,7 @@ class KnowledgeManagerHelper():
 
     def __init__(self, knowledge_manager) :
         self.knowledge_manager = knowledge_manager
+        #self.top_stack_item = knowledge_manager.knowledge_manager.pop(self.knowledge_manager._generator_list())
 
     def is_initial(self):
         if len(self.knowledge_manager) == 0:
@@ -110,11 +112,8 @@ class KnowledgeManagerHelper():
         if len(self.knowledge_manager) > 1:
             generated_list = self.knowledge_manager._generator_list()
             if KnowledgeManager.pop(generated_list)['state'] == UtteranceType.ROBOT.value:
-                print("here1")
                 item = KnowledgeManager.pop(generated_list)
-                print("here2")
                 if item['state'] == UtteranceType.INIT.value:
-                    print("here3")
                     return True, item['utterance']
         return False, ""
     
@@ -130,15 +129,21 @@ class KnowledgeManagerHelper():
                 return True
         return False
     
-    def is_rate_response(self):
+    def is_rate_response(self, tag):
         for item in self.knowledge_manager.get_list():
-            if item.get('state') == UtteranceType.RATE.value:
+            if item.get('tag') == tag and item.get('state') == UtteranceType.RATE.value:
                 return True
         return False
     
     def get_user_response_2_further(self, tag):
         for item in self.knowledge_manager.get_list():
             if item.get('tag') == tag and item.get('state') == UtteranceType.USER.value:
+                return item.get('utterance')
+        return ""
+    
+    def get_selected_painting(self, tag):
+        for item in self.knowledge_manager.get_list():
+            if item.get('tag')[0] == tag[0] and item.get('state') == UtteranceType.INIT.value:
                 return item.get('utterance')
         return ""
     

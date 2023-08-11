@@ -6,8 +6,15 @@ import pepper_bt.configs as cfg
 import pepper_bt.constant as const
 import pepper_bt.topics as topics
 import rospy
+from pepper_bt.main import *
 
 # pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
+# human_greeter = pepper.start_recognizing_people()
+# human_greeter.set_callback(PepperFSMControl.callback_method)
+
+
+  
+        
 #pepper.tablet_services()
 #pepper.presentation_gesture()
 #pepper.tablet_show_web("")

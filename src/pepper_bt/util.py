@@ -31,7 +31,7 @@ def get_next_tag(previous_tag, new_series=False):
     param: new_series: give new tag and change series of alphabet
     """
     if not previous_tag:
-        return 'a1'
+        return 'a01'
     
     alphabet = previous_tag[0]
     number = int(previous_tag[1:])

@@ -31,8 +31,8 @@ class UserEngaged(py_trees.behaviour.Behaviour):
         self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
         self.blackboard = py_trees.Blackboard()
         # After FSM, the engaged status in BT should be changed from None to True
-        if self.blackboard.get(BlackboardItems.USER_ENGAGED.value) is None:
-            self.blackboard.set(BlackboardItems.USER_ENGAGED.value, value=True, overwrite=True)
+        # if self.blackboard.get(BlackboardItems.USER_ENGAGED.value) is None:
+        #     self.blackboard.set(BlackboardItems.USER_ENGAGED.value, value=True, overwrite=True)
 
 
 
@@ -49,7 +49,7 @@ class UserEngaged(py_trees.behaviour.Behaviour):
             return py_trees.common.Status.FAILURE
 
 
-
+# Todo: remove
 class RobotSpeaking(py_trees.behaviour.Behaviour):
 
     def __init__(self):
@@ -71,7 +71,7 @@ class RobotSpeaking(py_trees.behaviour.Behaviour):
 
 class UserTurn(py_trees.behaviour.Behaviour):
 
-    def __init__(self,pepper, knowledge_manager, name="User is Allowed Turn"):
+    def __init__(self, pepper, knowledge_manager, name="User is Allowed Turn"):
         super(UserTurn,self).__init__(name = name)
         self.logger.debug("  %s [Listening::__init__()]" % self.__class__.__name__)
         self.knowledge_manager = knowledge_manager
@@ -84,16 +84,15 @@ class UserTurn(py_trees.behaviour.Behaviour):
     def update(self):
         self.logger.debug("  %s [Listening::update()]" % self.__class__.__name__)
         # This means only user selected the painting and there is no dialogs yet
-        item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
+        top_stack_item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
         helper = KnowledgeManagerHelper(self.knowledge_manager)
 
-        if len(self.knowledge_manager) == 0:
+        if self.knowledge_manager.is_init_state(top_stack_item):
             return py_trees.common.Status.SUCCESS
-            #self.blackboard.set(BlackboardItems.USERTURN, value=True, overwrite=True )
-        elif self.knowledge_manager.is_further_utterance(item):
+        elif self.knowledge_manager.is_further_utterance(top_stack_item):
             return py_trees.common.Status.SUCCESS
-        elif helper.is_rate_response():
-            if self.knowledge_manager.is_finish_state(item):
+        elif helper.is_rate_response(self.knowledge_manager.get_tag(top_stack_item)):
+            if self.knowledge_manager.is_finish_state(top_stack_item):
                 return py_trees.common.Status.FAILURE
             return py_trees.common.Status.SUCCESS
         else:

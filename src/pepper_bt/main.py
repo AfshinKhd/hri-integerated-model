@@ -24,42 +24,61 @@ class Pepper_Run():
     def __init__(self):
         self.pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
         self.knowledge_manager = KnowledgeManager()
-        self.behaviour_tree = self.PepperBTControl(self.pepper, self.knowledge_manager)
+        self.fsm_controller = PepperFSMControl(self.pepper)
+        self.behaviour_tree  = PepperBTControl(self.pepper, self.knowledge_manager, self.on_presentation_is_finished).clone()
+        self._stop_run = False
 
-        self._stop_bt = False
-
-        print("Pepper Starts Detection...")
+        print("Pepper is  Running...")
         self.run()
         print("\nPepper Stop Presentation!\n")
         
+
+    def reset_presentation(self):
+        self.fsm_controller.face_is_detected = False
+        #item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
+        #self.knowledge_manager.add_item(UtteranceType.INIT, "", get_next_tag(self.knowledge_manager.get_tag(item), True), backchannel=False)
         
 
     def on_presentation_is_finished(self, data_speech):
-        print("on pressentation")
-        self._stop_bt = True  
-        save_speech_data(data_speech)  
+        """
+
+        :param data_speech: knowledge_manager info 
+        :type  data_sppech: dict
+
+        """
+        save_speech_data(data_speech) 
+        self.fsm_controller.cycle() # Go to idle state
+        # Reset for new presentation
+        #self.reset_presentation()
+         
 
     def run(self):
-        for _unused_i in range(0, 10) :
-            if self._stop_bt:
-                print('break')
+
+        #for _unused_i in range(0, 10) :
+        self.fsm_controller.start()
+        while not self._stop_run:
+            if self._stop_run:
                 break
             try:
-                #py_trees.console.read_single_keypress()
-                # behaviour_tree.tick()
-                print("START BEHAVIOUR TREE...")
-            # if fsm_control.is_detected_active():
-                self.behaviour_tree.tick()
-                
+                if self.fsm_controller.is_detected_active():
+                    self.behaviour_tree.tick()
+                    
                 time.sleep(1)
             except KeyboardInterrupt:
                 break
+
         self.pepper.tablet_hide_web()
         self.pepper.stand()
 
 
-    def PepperBTControl(self, pepper, knowledge_manager):
-    
+
+
+
+class PepperBTControl():
+
+    def __init__(self,pepper, knowledge_manager, on_presentation_is_finished):
+
+        self.on_presentation_is_finished = on_presentation_is_finished
         root = self.create_tree(pepper, knowledge_manager)
         py_trees.logging.level = py_trees.logging.Level.DEBUG
 
@@ -67,12 +86,17 @@ class Pepper_Run():
         # Visualized the behavior tree - path:./catkin_ws
         print(py_trees.display.render_dot_tree(root))
 
-        behaviour_tree = py_trees.trees.BehaviourTree(root)
-        behaviour_tree.add_pre_tick_handler(self.pre_tick_handler)
-        behaviour_tree.setup(timeout=15)
+        self.behaviour_tree = py_trees.trees.BehaviourTree(root)
+        self.behaviour_tree.add_pre_tick_handler(self.pre_tick_handler)
+        self.behaviour_tree.setup(timeout=15)
 
-        return behaviour_tree
     
+    def clone(self):
+        return self.behaviour_tree
+
+
+    def pre_tick_handler(self, behaviour_tree) :
+        print("\n--------- Run %s ---------\n" % behaviour_tree.count)
 
     def create_tree(self, pepper, knowledge_manager) :
 
@@ -82,7 +106,7 @@ class Pepper_Run():
         # Conditon
         user_engaged = UserEngaged("User Enagaged")
         # Action
-        engage_user = EngageUser(pepper, "Engage User")
+        engage_user = EngageUser(pepper,knowledge_manager, "Engage User")
         #engage_user = py_trees.behaviours.Success("Enagage User")
         #engage_user = py_trees.behaviours.Running(name="Running")
         establish_enagagment.add_children([user_engaged,engage_user])
@@ -134,51 +158,31 @@ class Pepper_Run():
         root.add_child(interact_with_user)
 
         return root
-
-
-    def pre_tick_handler(self, behaviour_tree) :
-        print("\n--------- Run %s ---------\n" % behaviour_tree.count)
-
-
-
-
-
-
     
 
-def main():
-    Pepper_Run()
+   
     
-    # pepper_detect_control = PepperDetectionControl()
-    # PepperPresentationControl()
-    # pepper_detect_control.cycle()
-    # print(pepper_detect_control.current_state)
-    # print(pepper_detect_control.send('cycle'))
-    
-    #fsm_control = PepperFSMControl()
-
-
-    
-
-    
-
-
 
 
 class PepperFSMControl():
-    def __init__(self):
+    def __init__(self, pepper):
         # self.behaviour_tree = behaviour_tree
-        self.current_state = 'idle'
+        self.current_state = 'start'
         # self.presentation_permission = True
-        self.pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
+        self.pepper = pepper
         self.human_greeter = self.pepper.start_recognizing_people()
         self.human_greeter.set_callback(self.callback_method)
         #ensuring push only one cycle event
         self.face_is_detected = False
-        self.on_enter_idle()
+        #self.on_enter_idle()
 
     def cycle(self):
-        if self.current_state == 'idle':
+        if self.current_state == 'start':
+            self.current_state = 'detect'
+            self.on_exit_start()
+            self.on_enter_detected()
+
+        elif self.current_state == 'idle':
             self.current_state = 'detect'
             self.on_exit_idle()
             self.on_enter_detected()
@@ -186,28 +190,34 @@ class PepperFSMControl():
         elif self.current_state == 'detect':
             self.current_state = 'idle'
             self.on_exit_detected()
-            self.on_enter_idle
+            self.on_enter_idle()
+        else:
+            self.current_state = 'idle'
+            self.on_enter_idle()
 
-    def on_enter_idle(self):
-        print("====enter idle STATE") 
-        self.human_greeter.run()   
-        
+    def start(self):
+        self.current_state = 'start'
+        self.on_enter_start()
 
-    def on_exit_idle(self):
-        print("=====exit idle STATE")
+    def on_enter_start(self):
+        print("====Enter Start STATE") 
+        self.human_greeter.run()
+
+    def on_exit_start(self):
+        print("=====Exit Start STATE")
         self.human_greeter.stop()
 
+    def on_enter_idle(self):
+        print("====Enter Idle STATE") 
+
+    def on_exit_idle(self):
+        print("=====Exit Idle STATE")
+
     def on_enter_detected(self):
-        print("====enter people detected STATE")
-        # print("Pepper starts Presentation...")
-        # if self.presentation_permission:
-        #     self.behaviour_tree.tick()
-        #     self.presentation_permission = False
-        # self.say()
-     
+        print("====Enter Detected STATE")
 
     def on_exit_detected(self):
-        print("====exit People detected STATE")
+        print("====Exit Detected STATE")
 
     def is_idle_active(self):
         return self.current_state == 'idle'
@@ -216,12 +226,64 @@ class PepperFSMControl():
         return self.current_state == 'detect'
 
     def callback_method(self, value):
-        # Do something with the received value
-        print("Received value:", value)
-        print("face detected value is : ", self.face_is_detected)
-        if not self.face_is_detected:
+        # Todo: Do something with the received value
+        # First Field = TimeStamp[second, miliseconds]
+        # timeStamp = value[0]
+        # print("TimeStamp is: " + str(timeStamp))
+
+        # # Second Field = array of face_Info's.
+        # faceInfoArray = value[1]
+        # print("length of face info arrary (no. person) : ", len(faceInfoArray))
+        # for j in range( len(faceInfoArray)-1 ):
+        #     faceInfo = faceInfoArray[j]
+
+        #     # First Field = Shape info.
+        #     """
+        #     ShapeInfo =
+        #     [
+        #     0,
+        #     alpha,
+        #     beta,
+        #     sizeX,
+        #     sizeY
+        #     ]
+        #     """
+        #     faceShapeInfo = faceInfo[0]
+
+        #     # Second Field = Extra info (empty for now).
+        #     """
+        #     ExtraInfo =
+        #     [
+        #     faceID,
+        #     scoreReco,
+        #     faceLabel,
+        #     leftEyePoints,
+        #     rightEyePoints,
+        #     unused, # for backward-compatibility issues
+        #     unused,
+        #     nosePoints,
+        #     mouthPoints
+        #     ]
+        #     """
+        #     faceExtraInfo = faceInfo[1]
+
+        #     print("Face Infos :  alpha %.3f - beta %.3f \n" % (faceShapeInfo[1], faceShapeInfo[2]))
+        #     print("Face Infos :  width %.3f - height %.3f \n" % (faceShapeInfo[3], faceShapeInfo[4]))
+        #     print("Face Extra Infos :" + str(faceExtraInfo))
+        if self.is_idle_active():
             self.face_is_detected = True
+            self.cycle() # User recognised, start new presentation
+
+        if not self.face_is_detected:
             self.cycle()
+            self.face_is_detected = True
+            print(")))))))))cycle",self.current_state)
+
+
+
+
+def main():
+    Pepper_Run()
 
 
 
@@ -273,10 +335,54 @@ class PepperDetectionControl(StateMachine):
 
     def callback_method(self, value):
         # Do something with the received value
-        print("Received value:", value)
+        # First Field = TimeStamp[second, miliseconds]
+        timeStamp = value[0]
+        print("TimeStamp is: " + str(timeStamp))
+
+        # Second Field = array of face_Info's.
+        faceInfoArray = value[1]
+        print("length of face info arrary (no. person) : ", len(faceInfoArray))
+        for j in range( len(faceInfoArray)-1 ):
+            faceInfo = faceInfoArray[j]
+
+            # First Field = Shape info.
+            """
+            ShapeInfo =
+            [
+            0,
+            alpha,
+            beta,
+            sizeX,
+            sizeY
+            ]
+            """
+            faceShapeInfo = faceInfo[0]
+
+            # Second Field = Extra info (empty for now).
+            """
+            ExtraInfo =
+            [
+            faceID,
+            scoreReco,
+            faceLabel,
+            leftEyePoints,
+            rightEyePoints,
+            unused, # for backward-compatibility issues
+            unused,
+            nosePoints,
+            mouthPoints
+            ]
+            """
+            faceExtraInfo = faceInfo[1]
+
+            print("Face Infos :  alpha %.3f - beta %.3f \n" % (faceShapeInfo[1], faceShapeInfo[2]))
+            print("Face Infos :  width %.3f - height %.3f \n" % (faceShapeInfo[3], faceShapeInfo[4]))
+            print("Face Extra Infos :" + str(faceExtraInfo))
+
         if not self.face_detected:
             self.send('cycle')
             self.face_detected = True
+            print(")))))))))cycle")
         
 
     def say(self):

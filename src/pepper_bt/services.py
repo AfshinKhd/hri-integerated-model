@@ -41,7 +41,7 @@ class Pepper():
         self.beep_volume = 70 #(0~100)
         
         try:
-            self.app = qi.Application(["TabletModule", "--qi-url=" + self.connection_url])
+            #self.app = qi.Application(["TabletModule", "--qi-url=" + self.connection_url])
             self.session = qi.Session()
             self.session.connect("tcp://" + args.ip + ":" + str(args.port))
             self.led_service = self.session.service("ALLeds")
@@ -449,7 +449,8 @@ class HumanGreeter(object):
         # Get the services ALTextToSpeech and ALFaceDetection.
         self.tts = session.service("ALTextToSpeech")
         self.face_detection = session.service("ALFaceDetection")
-        self.face_detection.subscribe("HumanGreeter")
+        #self.face_detection.subscribe("HumanGreeter")
+        self.face_detection.subscribe("TabletModule")
         # # Enable or disable tracking.
         # self.face_detection.enableTracking(False)
         self.subscribers = []
@@ -469,32 +470,17 @@ class HumanGreeter(object):
 
 
     def on_human_tracked(self, value):
-        self.trigger_callback("Trigggggggggggggggggger !!!!!!!!!!")
+        
         if value == []:  # empty value when the face disappears
             print("empty")
             self.got_face = False
         elif not self.got_face:  # only speak the first time a face appears
+            # Send the face value to the main class
+            self.trigger_callback(value)
             self.got_face = True
-            print("I saw a face!")
-            self.tts.say("Hello, you!")
-            # First Field = TimeStamp.
-            timeStamp = value[0]
-            print("TimeStamp is: " + str(timeStamp))
+            print("<><><><><>I saw a face!")
+            #self.tts.say("Hello, you!")
 
-            # Second Field = array of face_Info's.
-            faceInfoArray = value[1]
-            for j in range( len(faceInfoArray)-1 ):
-                faceInfo = faceInfoArray[j]
-
-                # First Field = Shape info.
-                faceShapeInfo = faceInfo[0]
-
-                # Second Field = Extra info (empty for now).
-                faceExtraInfo = faceInfo[1]
-
-                # print("Face Infos :  alpha %.3f - beta %.3f \n" % (faceShapeInfo[1], faceShapeInfo[2]))
-                # print("Face Infos :  width %.3f - height %.3f \n" % (faceShapeInfo[3], faceShapeInfo[4]))
-                # print("Face Extra Infos :" + str(faceExtraInfo))
 
     def on_person_looks_at_robot(self, data):
         print("on_person_looks_at_robot")
@@ -594,7 +580,9 @@ class HumanGreeter(object):
             sys.exit(0)
 
     def stop(self):
-         self.face_detection.unsubscribe("HumanGreeter")
+         #self.face_detection.unsubscribe("HumanGreeter")
+         #self.face_detection.unsubscribe("TabletModule")
+         # Todo: don't forget for unsubscribe tablet module
          self.stop_run = True
         #  for subscriber in  self.subscribers:
         #      subscriber.signal.disconnectAll()
