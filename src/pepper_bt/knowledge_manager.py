@@ -10,6 +10,12 @@ class UtteranceType(Enum):
     RATE = "rate"
     FINISH = "finish" #finishing bt
 
+class Utterance(Enum):
+    STATE = 'state'
+    BACKCHANNEL = 'backchannel'
+    UTTERANCE = 'utterance'
+    TAG = 'tag'
+
 
 class KnowledgeManager():
 
@@ -20,7 +26,7 @@ class KnowledgeManager():
         self._list.append(item)
 
     def add_item(self, state, dialog, tag, backchannel=False):
-        self._add({'state': state.value, 'backchannel': backchannel, 'utterance': dialog, 'tag':tag})
+        self._add({Utterance.STATE.value: state.value, Utterance.BACKCHANNEL.value: backchannel, Utterance.UTTERANCE.value: dialog, Utterance.TAG.value:tag})
     
     def get_list(self):
         return self._list
@@ -30,13 +36,13 @@ class KnowledgeManager():
     def get_item_utterance(item):
         if item == None:
             return ""
-        return item['utterance']
+        return item[Utterance.UTTERANCE.value]
     
     @staticmethod
     def get_tag(item):
         if item == None:
             return ""
-        return item['tag']
+        return item[Utterance.TAG.value]
     
  
     
@@ -44,37 +50,37 @@ class KnowledgeManager():
     def is_robot_utterance(item):
         if item == None:
             return False
-        return item['state'] == UtteranceType.ROBOT.value
+        return item[Utterance.STATE.value] == UtteranceType.ROBOT.value
     
     @staticmethod
     def is_user_utterance(item):
         if item == None:
             return False
-        return item['state'] == UtteranceType.USER.value
+        return item[Utterance.STATE.value] == UtteranceType.USER.value
     
     @staticmethod
     def is_further_utterance(item):
         if item == None:
             return False
-        return item['state'] == UtteranceType.FURTHER.value
+        return item[Utterance.STATE.value] == UtteranceType.FURTHER.value
     
     @staticmethod
     def is_rate_utterance(item):
         if item == None:
             return False
-        return item['state'] == UtteranceType.RATE.value
+        return item[Utterance.STATE.value] == UtteranceType.RATE.value
     
     @staticmethod
     def is_finish_state(item):
         if item == None:
             return False
-        return item['state'] == UtteranceType.FINISH.value
+        return item[Utterance.STATE.value] == UtteranceType.FINISH.value
     
     @staticmethod
     def is_init_state(item):
         if item == None:
             return False
-        return item['state'] == UtteranceType.INIT.value
+        return item[Utterance.STATE.value] == UtteranceType.INIT.value
      
     def _generator_list(self):
         for item in self._list[::-1]:

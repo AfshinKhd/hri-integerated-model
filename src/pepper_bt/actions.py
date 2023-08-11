@@ -9,25 +9,7 @@ from pepper_bt.topics import Speaking as SyncSpeak
 from pepper_bt.knowledge_manager import KnowledgeManager, UtteranceType,KnowledgeManagerHelper
 import time
  
-class ShowPainting(py_trees.behaviour.Behaviour):
-
-    def __init__(self,imageUrl):
-        super(ShowPainting,self).__init__(name = "Show Painting on Tablet")
-        self.img_url = imageUrl
-        self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
-        self.blackboard = py_trees.Blackboard()
-        self.pepper_robot = Pepper(cfg.IP_ADDRESS, cfg.PORT)
- 
-    def update(self) :
-        self.logger.debug("[%s::update]" % self.__class__.__name__)
-
-        self.pepper_robot.tablet_show_image(self.img_url)
-        self.blackboard.set(BlackboardItems.TABLET_IS_SHOWING_PAINT,value=True,overwrite=True)
-        self.blackboard.set(BlackboardItems.TABLET_IS_SHOWING_PAINT, value=False, overwrite=True)
-
-        return py_trees.common.Status.SUCCESS
     
-
 class RobotStartsSpeaking(py_trees.behaviour.Behaviour):
 
     def __init__(self, pepper,knowledge_manager, name="Robot Starts Speaking"):
@@ -78,16 +60,14 @@ class EngageUser(py_trees.behaviour.Behaviour):
     def update(self):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
 
-        # utterance
+        # Utterance
         utterance = SyncSpeak()
         utterance.say(const.PRESENTATION_HELLO)
-        # Gesture
+        # Gesture: run annimation: Async
         self.pepper.present_gesture()
         
         if self.pepper.tablet_show_web():           
             # Waiting for action of user
-            #app = self.pepper.tablet_touch_handling()
-   
             coordinate = self.pepper._touch_down_feedback(lower_x=80, upper_x=1680, lower_y=0 , upper_y=1020)
 
             # Todo: dynamic numbers
@@ -243,10 +223,7 @@ class ProcessUserInput(py_trees.behaviour.Behaviour):
             return 5
         else:
             print("something goes wrong!")
-        
         return 0
-
-        # if coordinate.x 
 
     
     def _say(self, dialog):
@@ -285,7 +262,7 @@ class ReactUserInput(py_trees.behaviour.Behaviour):
 
         if helper.is_further_response(self.knowledge_manager.get_tag(top_stack_item)):
             if helper.get_selected_painting(self.knowledge_manager.get_tag(top_stack_item)) == const.judgment_of_cambyses_painting['name']:
-                dialog = dialog = const.JUDGEMNT_OF_CAMBYSES_PAINTING_FURTHER
+                dialog = const.JUDGEMNT_OF_CAMBYSES_PAINTING_FURTHER
             elif helper.get_selected_painting(self.knowledge_manager.get_tag(top_stack_item)) == const.scream_painting['name']:
                 dialog = const.SCREAM_PAINTING_FURTHER
             else:

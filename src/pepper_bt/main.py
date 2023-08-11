@@ -24,8 +24,8 @@ class Pepper_Run():
     def __init__(self):
         self.pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
         self.knowledge_manager = KnowledgeManager()
-        self.fsm_controller = PepperFSMControl(self.pepper)
         self.behaviour_tree  = PepperBTControl(self.pepper, self.knowledge_manager, self.on_presentation_is_finished).clone()
+        self.fsm_controller = PepperFSMControl(self.pepper, self.behaviour_tree)
         self._stop_run = False
 
         print("Pepper is  Running...")
@@ -56,15 +56,18 @@ class Pepper_Run():
 
         #for _unused_i in range(0, 10) :
         self.fsm_controller.start()
-        while not self._stop_run:
-            if self._stop_run:
-                break
+        while not self.fsm_controller.force_stop:
+            # if self.fsm_controller.force_stop:
+            #     break
             try:
                 if self.fsm_controller.is_detected_active():
                     self.behaviour_tree.tick()
                     
                 time.sleep(1)
             except KeyboardInterrupt:
+                break
+            except RuntimeError as e:
+                print(e)
                 break
 
         self.pepper.tablet_hide_web()
@@ -165,8 +168,8 @@ class PepperBTControl():
 
 
 class PepperFSMControl():
-    def __init__(self, pepper):
-        # self.behaviour_tree = behaviour_tree
+    def __init__(self, pepper, behaviour_tree):
+        self.behaviour_tree = behaviour_tree
         self.current_state = 'start'
         # self.presentation_permission = True
         self.pepper = pepper
@@ -174,6 +177,7 @@ class PepperFSMControl():
         self.human_greeter.set_callback(self.callback_method)
         #ensuring push only one cycle event
         self.face_is_detected = False
+        self.force_stop = False
         #self.on_enter_idle()
 
     def cycle(self):
@@ -205,7 +209,7 @@ class PepperFSMControl():
 
     def on_exit_start(self):
         print("=====Exit Start STATE")
-        self.human_greeter.stop()
+        #self.human_greeter.stop()
 
     def on_enter_idle(self):
         print("====Enter Idle STATE") 
@@ -226,6 +230,14 @@ class PepperFSMControl():
         return self.current_state == 'detect'
 
     def callback_method(self, value):
+        if value == "FORCE_STOP":
+            print('force stoppppppppppppp')
+            self.force_stop = True
+            self.behaviour_tree.destroy()   
+            self.human_greeter.stop()
+            quit()
+            #raise RuntimeError("Forced Stop")
+            #sys.exit(1)
         # Todo: Do something with the received value
         # First Field = TimeStamp[second, miliseconds]
         # timeStamp = value[0]
@@ -321,7 +333,7 @@ class PepperDetectionControl(StateMachine):
 
     def on_exit_idle(self):
         print("=====exit idle STATE")
-        self.human_greeter.stop()
+        #self.human_greeter.stop()
 
     def on_enter_people_detected(self):
         print("====enter people detected STATE")

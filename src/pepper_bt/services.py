@@ -10,6 +10,7 @@ from scp import SCPClient
 import pepper_bt.constant as const
 import subprocess
 import pepper_bt.configs as cfg
+import functools
 import logging
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 # from naoqi_bridge_msgs.msg import PeoplePerceptionPeopleList, PeoplePerceptionPeopleDetected
@@ -39,6 +40,7 @@ class Pepper():
         self.ip = ip_address
 
         self.beep_volume = 70 #(0~100)
+        self.tablet_signalID = 0
         
         try:
             #self.app = qi.Application(["TabletModule", "--qi-url=" + self.connection_url])
@@ -71,6 +73,9 @@ class Pepper():
     def get_user_speech(self):
         self.audio_player.playSine(1000,self.beep_volume,1,0.3)
         time.sleep(.5)
+
+    def close_app(self):
+        qi._stopApplication()
 
         
     def listen(self):
@@ -305,16 +310,16 @@ class Pepper():
          
         return HumanGreeter(app)
     
-    def tablet_touch_handling(self):
-        """
-        If run and stop the application is needed, this function can be used
-        """
-        try:
-           self.app.start()
-           return self.app
-        except RuntimeError:
-           print ("tablet connection has error to connect")
-           sys.exit(1)
+    # def tablet_touch_handling(self):
+    #     """
+    #     If run and stop the application is needed, this function can be used
+    #     """
+    #     try:
+    #        self.app.start()
+    #        return self.app
+    #     except RuntimeError:
+    #        print ("tablet connection has error to connect")
+    #        sys.exit(1)
         
 
     def _touch_down_feedback(self, **coordination_limit):
@@ -333,20 +338,20 @@ class Pepper():
             #tabletService = session.service("ALTabletService")
             coordinate = []
             # Don't forget to disconnect the signal at the end
-            signalID = 0
+            self.tablet_signalID = 0
             # function called when the signal onTouchDown is triggered
             def callback(x, y):
                 print("coordinate are x: ", x, " y: ", y)
                 if lower_x < x and upper_x > x and lower_y < y and upper_y > y:
                     coordinate.append({'x':x, 'y':y})
-                    self.tablet_service.onTouchDown.disconnect(signalID)
+                    self.tablet_service.onTouchDown.disconnect(self.tablet_signalID)
                 else:
                     print("wrong click")
                 
                 #app.stop()
                
              # attach the callback function to onJSEvent signal
-            signalID = self.tablet_service.onTouchDown.connect(callback)
+            self.tablet_signalID = self.tablet_service.onTouchDown.connect(callback)
             #app.run()
             try:
                 while len(coordinate) == 0:    
@@ -354,10 +359,17 @@ class Pepper():
             except KeyboardInterrupt:
                 print("Interrupted by user, stopping HumanGreeter")
                 return None
+            except RuntimeError as e:
+                print("Touch down error : ", e)
+                return None
             return coordinate[0]
 
         except Exception as  e:
             print("Error was: ", e)
+
+    def shotdown_tablet_touch(self):
+        print("sdeewwwwwwwwwwwwwwwwwwwwww")
+        self.tablet_service.onTouchDown.disconnect(self.tablet_signalID)
 
     def ftouch_down_feedback(self):
         print("here")
@@ -436,8 +448,9 @@ class HumanGreeter(object):
     def __init__(self, app):
         
         super(HumanGreeter, self).__init__()
-        app.start()
-        session = app.session
+        self.app = app
+        self.app.start()
+        session = self.app.session
 
         self.memory = session.service("ALMemory")
         self.gaze_analysis = session.service("ALGazeAnalysis")
@@ -450,7 +463,7 @@ class HumanGreeter(object):
         self.tts = session.service("ALTextToSpeech")
         self.face_detection = session.service("ALFaceDetection")
         #self.face_detection.subscribe("HumanGreeter")
-        self.face_detection.subscribe("TabletModule")
+        self.face_detection.subscribe("HumanGreeter")
         # # Enable or disable tracking.
         # self.face_detection.enableTracking(False)
         self.subscribers = []
@@ -480,6 +493,29 @@ class HumanGreeter(object):
             self.got_face = True
             print("<><><><><>I saw a face!")
             #self.tts.say("Hello, you!")
+
+    def on_touched(self, value):
+        # Disconnect to the event when talking,
+        # to avoid repetitions
+        id = self.subscribers[1]['id']
+        self.subscribers[1]['subscriber'].signal.disconnect(id)
+        self.subscribers[1]['is_connected'] = False
+        
+        
+        """
+        [['LArm', True, [1L]], ['LHand/Touch/Back', True, [1L]]]
+        [['RArm', True, [1L]], ['RHand/Touch/Back', True, [1L]]]
+        [['Head', True, [1L]], ['Head/Touch/Rear', True, [1L]]]
+        """
+
+        for p in value:
+            if p[1]:
+                if p[0] == 'Head':
+                    self.trigger_callback("FORCE_STOP")
+
+        # Reconnect again to the event
+        self.subscribers[1]['id'] = self.subscribers[1]['subscriber'].signal.connect(self.on_touched)
+        self.subscribers[1]['is_connected'] = True
 
 
     def on_person_looks_at_robot(self, data):
@@ -570,26 +606,32 @@ class HumanGreeter(object):
         self.create_callbacks()
         # self.set_awareness(True)
 
-        try:
-            while not self.stop_run:
-                time.sleep(.5)
-        except KeyboardInterrupt:
-            print("Interrupted by user, stopping HumanGreeter")
-            #self.face_detection.unsubscribe("HumanGreeter")
-            #stop
-            sys.exit(0)
+        # try:
+        #     while not self.stop_run:
+        #         time.sleep(.5)
+        # except KeyboardInterrupt:
+        #     print("Interrupted by user, stopping HumanGreeter")
+        #     #self.face_detection.unsubscribe("HumanGreeter")
+        #     #stop
+        #     sys.exit(0)
 
     def stop(self):
          #self.face_detection.unsubscribe("HumanGreeter")
-         #self.face_detection.unsubscribe("TabletModule")
-         # Todo: don't forget for unsubscribe tablet module
-         self.stop_run = True
-        #  for subscriber in  self.subscribers:
-        #      subscriber.signal.disconnectAll()
+
+       self.face_detection.unsubscribe("HumanGreeter")
+       # Todo: don't forget for unsubscribe tablet module
+       qi._stopApplication()
+       self.stop_run = True
+       for subscriber in  self.subscribers:
+            if subscriber['is_connected']:
+                id = subscriber['id']
+                subscriber['subscriber'].signal.disconnect(id)
+  
 
 
     def create_callbacks(self):
         self.connect_callback("FaceDetected",self.on_human_tracked)
+        self.connect_callback("TouchChanged",self.on_touched)
         # self.connect_callback("GazeAnalysis/PeopleLookingAtRobot",self.on_person_looks_at_robot)
         # self.connect_callback("GazeAnalysis/PersonStartsLookingAtRobot",self.on_person_starts_looking_at_robot)
         # self.connect_callback("GazeAnalysis/PersonStopsLookingAtRobot",self.on_person_stop_looking_at_robot)
@@ -618,9 +660,10 @@ class HumanGreeter(object):
         
     def connect_callback(self, event_name, callback_function):
         try:
+            
             subscriber = self.memory.subscriber(event_name)
-            subscriber.signal.connect(callback_function)
-            self.subscribers.append(subscriber)
+            id = subscriber.signal.connect(callback_function)
+            self.subscribers.append({"name":event_name, "subscriber":subscriber, "id":id, "is_connected":True})
         except Exception as e:
             print("Error is %s" % e)
 
