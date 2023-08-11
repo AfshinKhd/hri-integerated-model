@@ -43,7 +43,7 @@ class Pepper_Run():
 
         """
         save_speech_data(data_speech) 
-        time.sleep(5)
+        time.sleep(10)
         self.fsm_controller.cycle() # Go to idle state
         
          
@@ -210,6 +210,7 @@ class PepperFSMControl():
 
     def on_enter_idle(self):
         print("====Enter Idle STATE") 
+        self.human_greeter.got_face = False # Preparation for new presentation
 
     def on_exit_idle(self):
         print("=====Exit Idle STATE")
@@ -227,14 +228,29 @@ class PepperFSMControl():
         return self.current_state == 'detect'
 
     def callback_method(self, value):
+        # if params['on'] == "human_tracked":
+        #     if params == []:  # empty value when the face disappears
+        #         print("empty")
+        #         self.got_face = False
+        #     elif not self.got_face:  # only speak the first time a face appears
+        #         self.got_face = True
+        #         print("<><><><><>I saw a face!")
+        #         value = params['value']
+        # elif params['on'] == "touched":
+        #     value = params['value']
+        # else:
+        #     print("trigger goes wrong!")
+        #     value = ""
+        
         if value == "FORCE_STOP":
             print('force stoppppppppppppp')
             self.force_stop = True
             self.behaviour_tree.destroy()   
             self.human_greeter.stop()
-            quit()
+            #quit()
             #raise RuntimeError("Forced Stop")
             #sys.exit(1)
+
         # Todo: Do something with the received value
         # First Field = TimeStamp[second, miliseconds]
         # timeStamp = value[0]
@@ -279,14 +295,16 @@ class PepperFSMControl():
         #     print("Face Infos :  alpha %.3f - beta %.3f \n" % (faceShapeInfo[1], faceShapeInfo[2]))
         #     print("Face Infos :  width %.3f - height %.3f \n" % (faceShapeInfo[3], faceShapeInfo[4]))
         #     print("Face Extra Infos :" + str(faceExtraInfo))
+
+        # User recognised, start new presentation
         if self.is_idle_active():
             self.face_is_detected = True
-            self.cycle() # User recognised, start new presentation
+            self.cycle() 
 
+        # Starting First Presentation
         if not self.face_is_detected:
             self.cycle()
             self.face_is_detected = True
-            print(")))))))))cycle",self.current_state)
 
 
 

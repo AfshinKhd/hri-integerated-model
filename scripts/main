@@ -9,6 +9,7 @@ import rospy
 from pepper_bt.main import *
 
 # pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
+# pepper.listen()
 # human_greeter = pepper.start_recognizing_people()
 # human_greeter.set_callback(PepperFSMControl.callback_method)
 

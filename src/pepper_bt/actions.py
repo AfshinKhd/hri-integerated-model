@@ -128,7 +128,7 @@ class RobotTakesTurn(py_trees.behaviour.Behaviour):
                 self._say(dialog)
                 return py_trees.common.Status.SUCCESS               
             elif helper.is_further_response(self.knowledge_manager.get_tag(top_stack_item)):
-             
+                print(helper.get_user_response_2_further(self.knowledge_manager.get_tag(top_stack_item)))
                 if helper.get_user_response_2_further(self.knowledge_manager.get_tag(top_stack_item)) == 'yes' and not self.blackboard.get(BlackboardItems.LAST_FURTHER.value):
                     dialog = Backchannel.CONFIRM.value
                     self.knowledge_manager.add_item(UtteranceType.ROBOT, dialog, self.knowledge_manager.get_tag(top_stack_item), backchannel=True)
@@ -182,17 +182,16 @@ class ProcessUserInput(py_trees.behaviour.Behaviour):
         helper = KnowledgeManagerHelper(self.knowledge_manager)
 
         if self.knowledge_manager.is_further_utterance(top_stack_item):
-            # Todo, say yes or no:
+
             dialog = const.YES_NO
             self.knowledge_manager.add_item(UtteranceType.ROBOT, dialog, self.knowledge_manager.get_tag(top_stack_item), backchannel=False)
             self._say(dialog)
-            # 5 second wait for answer
-            self.pepper.get_user_speech()
-            time.sleep(2)
-            # Todo: static code
-            _user_fb = "yes"
-            self.knowledge_manager.add_item(UtteranceType.USER, _user_fb, self.knowledge_manager.get_tag(top_stack_item), backchannel=False)
-            self.knowledge_manager.add_item(UtteranceType.ROBOT, "Your Answer is yes", self.knowledge_manager.get_tag(top_stack_item), backchannel=False)
+
+            # Default is "NO" - 6 Seconds wait
+            _user_response = self.pepper.listen_to_user()
+
+            self.knowledge_manager.add_item(UtteranceType.USER, _user_response, self.knowledge_manager.get_tag(top_stack_item), backchannel=False)
+            self.knowledge_manager.add_item(UtteranceType.ROBOT, "Your Answer is " + _user_response, self.knowledge_manager.get_tag(top_stack_item), backchannel=False)
         # Todo elif final step say thank put the rate in the file + utterance 
         elif helper.is_rate_response(self.knowledge_manager.get_tag(top_stack_item)):
 

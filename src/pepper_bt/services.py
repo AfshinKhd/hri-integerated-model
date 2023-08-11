@@ -32,6 +32,7 @@ class Pepper():
 
     def __init__(self, ip_address, port=9559):
         parser = argparse.ArgumentParser()
+        # Todo: change it
         parser.add_argument("--ip", type=str, default=ip_address,
                             help="Robot IP address. On robot or Local Naoqi: use %s." % ip_address)
         parser.add_argument("--port", type=int, default=port,
@@ -57,6 +58,8 @@ class Pepper():
             self.audio_player = self.session.service("ALAudioPlayer")
             self.audio_recorder = self.session.service("ALAudioRecorder")
             self.speech_service = self.session.service("ALSpeechRecognition")
+            self.speech_service.setLanguage("English")
+        
             self.tts = self.session.service("ALTextToSpeech")
             self.posture_service = self.session.service("ALRobotPosture")
 
@@ -79,39 +82,81 @@ class Pepper():
         qi._stopApplication()
 
         
-    def listen(self):
-        if True:
+    def listen_to_user(self):
+
+        vocabulary = ["yes", "no"]
+        self.speech_service.pause(True)
+        try:
+            self.speech_service.setVocabulary(vocabulary, False)
+        except RuntimeError as error:
+            print(error)
+            self.speech_service.removeAllContext()
+            self.speech_service.setVocabulary(vocabulary, True)
+            self.speech_service.subscribe("Test_ASR")
+        try:
+
             self.audio_player.playSine(1000,self.beep_volume,1,0.3)
-            time.sleep(.5)
             self.blink_eyes([255, 255, 0])
 
-        base_duration=3
-        self.record_time = time.time()+base_duration
-        self.audio_recorder.stopMicrophonesRecording()
-        print('Speech Detected : Start Recording')
-        channels = [0,0,1,0] #left,right,front,rear
-        fileidx = "recog"
-        #self.audio_recorder.startMicrophonesRecording("/home/nao/record/"+fileidx+".wav", "wav", 48000, channels)
-        self.audio_recorder.startMicrophonesRecording("/home/nao/speech.wav", "wav", 48000, channels)
-        #self.audio_recorder.startMicrophonesRecording("/home/nao/speech.wav", "wav", 48000, (0, 0, 1, 0))
-        #
-        #
-        while time.time() < self.record_time :
-            print(time.time())
-            # if self.audio_terminate :
-            #     self.audio_recorder.stopMicrophonesRecording()
-            #     print('kill!!!')
-            #     return None
-            time.sleep(0.1)
+            print("[INFO]: Robot is listening to you...")
+            self.speech_service.pause(False)
+            time.sleep(5)
+            words = self.memory_service.getData("WordRecognized")
+
+            return words[0]
+        except:
+            return "no"
         
-        self.audio_recorder.stopMicrophonesRecording()
-        self.audio_recorder.recording_ended = True
 
-        if not os.path.exists('./audio_record'):
-                os.mkdir('./audio_record', 0755)
+        # Start the speech recognition engine with user Test_ASR
+        # self.speech_service.subscribe("Test_ASR")
+        # print ('Speech recognition engine started')
+        # time.sleep(20)
+        # self.speech_service.unsubscribe("Test_ASR")
+        # Or, if you want to enable word spotting:
+        #asr.setVocabulary(vocabulary, True)
 
-        cmd = 'sshpass -p 1847! scp nao@'+str(self.ip)+':/home/nao/speech.wav ./audio_record'
-        os.system(cmd)
+        # self.speech_service.setAudioExpression(False)
+        # self.speech_service.setVisualExpression(False)
+        # self.audio_recorder.stopMicrophonesRecording()
+        # print("[INFO]: Speech recognition is in progress. Say something.")
+        # while True:
+        #     #print(self.memory_service.getData("ALSpeechRecognition/Status"))
+        #     if self.memory_service.getData("ALSpeechRecognition/Status") == "SpeechDetected":
+        #         print("[INFO]: Robot is listening to you")
+        #         self.blink_eyes([255, 255, 0])
+        #         self.audio_recorder.startMicrophonesRecording("/home/nao/speech.wav", "wav", 48000, (0, 0, 1, 0))
+
+        #         self.blink_eyes([255, 255, 0])
+        #         break
+
+        # base_duration=3
+        # self.record_time = time.time()+base_duration
+        # self.audio_recorder.stopMicrophonesRecording()
+        # print('Speech Detected : Start Recording')
+        # channels = [0,0,1,0] #left,right,front,rear
+        # fileidx = "recog"
+        # #self.audio_recorder.startMicrophonesRecording("/home/nao/record/"+fileidx+".wav", "wav", 48000, channels)
+        # self.audio_recorder.startMicrophonesRecording("/home/nao/speech.wav", "wav", 48000, channels)
+        # #self.audio_recorder.startMicrophonesRecording("/home/nao/speech.wav", "wav", 48000, (0, 0, 1, 0))
+        # #
+        # #
+        # while time.time() < self.record_time :
+        #     print(time.time())
+        #     # if self.audio_terminate :
+        #     #     self.audio_recorder.stopMicrophonesRecording()
+        #     #     print('kill!!!')
+        #     #     return None
+        #     time.sleep(0.1)
+        
+        # self.audio_recorder.stopMicrophonesRecording()
+        # self.audio_recorder.recording_ended = True
+
+        # if not os.path.exists('./audio_record'):
+        #         os.mkdir('./audio_record', 0755)
+
+        # cmd = 'sshpass -p 1847! scp nao@'+str(self.ip)+':/home/nao/speech.wav ./audio_record'
+        # os.system(cmd)
         #self.download_file("speech.wav")
    
    
@@ -487,16 +532,16 @@ class HumanGreeter(object):
 
 
     def on_human_tracked(self, value):
-        
-        if value == []:  # empty value when the face disappears
+             
+         if value == []:  # empty value when the face disappears
             print("empty")
             self.got_face = False
-        elif not self.got_face:  # only speak the first time a face appears
-            # Send the face value to the main class
-            self.trigger_callback(value)
+         elif not self.got_face:  # only speak the first time a face appears
             self.got_face = True
             print("<><><><><>I saw a face!")
-            #self.tts.say("Hello, you!")
+            self.trigger_callback({"on":"human_tracked", "value":value})
+
+        
 
     def on_touched(self, value):
         # Disconnect to the event when talking,
