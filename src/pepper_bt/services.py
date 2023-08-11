@@ -5,6 +5,7 @@ import sys
 import time
 import os
 from naoqi import ALProxy
+from pepper_bt import topics
 import paramiko
 from scp import SCPClient
 import pepper_bt.constant as const
@@ -233,9 +234,12 @@ class Pepper():
 
         #self.motion_service.angleInterpolationWithSpeed(["RShoulderPitch", "RWristYaw", "RHand"], [0.8, 2.5, 1.0], 1.0)
 
-    def present_gesture(self):
+    def present_gesture(self, _async=False):
         #self.hand("left",False)
-        self.start_animation("Explain_11")
+        if _async:
+            self.start_animation("Explain_11")
+        else:
+            topics.play_annimation().publish()
     
     def hand(self, hand, close):
         """
@@ -626,7 +630,7 @@ class HumanGreeter(object):
             if subscriber['is_connected']:
                 id = subscriber['id']
                 subscriber['subscriber'].signal.disconnect(id)
-  
+       
 
 
     def create_callbacks(self):

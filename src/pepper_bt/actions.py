@@ -28,7 +28,7 @@ class RobotStartsSpeaking(py_trees.behaviour.Behaviour):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
 
         # Gesture 
-        #self.pepper.present_gesture()
+        self.pepper.present_gesture()
         # utterance
         # Todo : check robot utterance
         top_stack_item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
@@ -64,7 +64,8 @@ class EngageUser(py_trees.behaviour.Behaviour):
         utterance = SyncSpeak()
         utterance.say(const.PRESENTATION_HELLO)
         # Gesture: run annimation: Async
-        self.pepper.present_gesture()
+        #self.pepper.present_gesture()
+        self.pepper.present_gesture(False)
         
         if self.pepper.tablet_show_web():           
             # Waiting for action of user
@@ -304,7 +305,8 @@ class EnsureUserAttention(py_trees.behaviour.Behaviour):
     def update(self):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
         
-        self.pepper.speech_gesture()
+        # Todo: ??
+        #self.pepper.speech_gesture()
         #time.sleep(.5)
 
         return py_trees.common.Status.SUCCESS

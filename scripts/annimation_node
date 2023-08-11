@@ -1,0 +1,10 @@
+#!/usr/bin/env python
+
+import pepper_bt.annimation_node as annim_node
+
+
+
+annim_node.launch_annimation()
+
+
+ 

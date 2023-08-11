@@ -3,7 +3,6 @@
 import typing
 import py_trees
 from py_trees import common
-from pepper_bt.topics import Listening
 from pepper_bt.util import BlackboardItems
 from knowledge_manager import KnowledgeManagerHelper
 

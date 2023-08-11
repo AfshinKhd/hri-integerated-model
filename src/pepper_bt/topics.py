@@ -4,9 +4,8 @@ import typing
 import py_trees
 from py_trees import common
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 from pepper_bt.msg import SpeechParams
-from pepper_bt.services import Pepper
 import configs as cfg
 import os
 import pepper_bt.util 
@@ -15,7 +14,7 @@ import pepper_bt.util
 class Speaking():
 
     def __init__(self):
-        rospy.init_node('pepper_speaker')
+        rospy.init_node('pepper_main')
         self.publisher = rospy.Publisher('/speech', String, queue_size=10)
 
     def say(self, message):
@@ -28,7 +27,7 @@ class Speaking_():
 
     def __init__(self):
 
-        self.pepper = Pepper(cfg.IP_ADDRESS,cfg.PORT)
+        #self.pepper = Pepper(cfg.IP_ADDRESS,cfg.PORT)
   
 
         rospy.init_node('chatter', anonymous=True)
@@ -65,33 +64,26 @@ def publisher():
 
  
 
-if __name__ == "__main__":
-    publisher()
-
-class Listening():
+class play_annimation():
 
     def __init__(self):
-        #super(Listening,self).__init__()
+        rospy.init_node('pepper_main', anonymous=False)
+        self.publisher = rospy.Publisher('/pepper_annim', String, queue_size=10)
+        self.rate = rospy.Rate(10) # 10hz
 
-        self.state = py_trees.Blackboard()
-
-
-    def listen(self):
-        rospy.init_node('pepper_speaker')
         
-        subscriber = rospy.Subscriber("/speech", String, self.listener_cb)
-      # spin() simply keeps python from exiting until this node is stopped
-        print("hereee")
-        #rospy.spin()
-        return py_trees.common.Status.SUCCESS
+    def publish(self):
+        print('play annimation')
+        rospy.sleep(.1)
+        self.publisher.publish("False")
+        
+
+if __name__ == "__main__":
     
-  
-    def listener_cb(self,msg):
-        print("seccooooooooooooooooooooooooo")
-        print("msge is : %s " % msg.data)
-        self.state.set("speaking_is_running",True,overwrite=True)
- 
-
-
-class Move(py_trees.behaviour.Behaviour):
-    pass
+    try:
+        tp = play_annimation()
+        tp.publish()
+    except rospy.ROSInterruptException:
+        pass
+    
+    

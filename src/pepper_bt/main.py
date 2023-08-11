@@ -33,11 +33,7 @@ class Pepper_Run():
         print("\nPepper Stop Presentation!\n")
         
 
-    def reset_presentation(self):
-        self.fsm_controller.face_is_detected = False
-        #item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
-        #self.knowledge_manager.add_item(UtteranceType.INIT, "", get_next_tag(self.knowledge_manager.get_tag(item), True), backchannel=False)
-        
+
 
     def on_presentation_is_finished(self, data_speech):
         """
@@ -47,9 +43,9 @@ class Pepper_Run():
 
         """
         save_speech_data(data_speech) 
+        time.sleep(5)
         self.fsm_controller.cycle() # Go to idle state
-        # Reset for new presentation
-        #self.reset_presentation()
+        
          
 
     def run(self):
@@ -72,6 +68,7 @@ class Pepper_Run():
 
         self.pepper.tablet_hide_web()
         self.pepper.stand()
+        self.pepper.say("Bye!")
 
 
 
@@ -328,7 +325,9 @@ class PepperDetectionControl(StateMachine):
   
         
     def on_enter_idle(self):
-        print("====enter idle STATE")    
+        print("====enter idle STATE")   
+        # Reset for finin
+        self.face_detected = False 
         self.human_greeter.run()
 
     def on_exit_idle(self):

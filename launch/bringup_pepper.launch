@@ -5,6 +5,10 @@
     <arg name="nao_ip" value="10.0.0.3 "/>
     <arg name="network_interface" value="ens33"/>
     </include>
+
+    <node name="pepper_annim" pkg="pepper_bt" type="annimation_node"  output="log" >
+    </node>
+   
     
 
 </launch>
