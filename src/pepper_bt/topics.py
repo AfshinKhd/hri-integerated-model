@@ -54,8 +54,11 @@ class Speaking_():
     def speech_cb(self,data):
         print("data is:",data)
 
-
-
+def get_current_time():
+    # rospy.init_node('pepper_main', anonymous=False)
+    current_time = rospy.Time.now()
+    return current_time.to_sec()
+    # return 10
 
 def publisher():
     
@@ -64,11 +67,11 @@ def publisher():
 
  
 
-class play_annimation():
+class Play_Animation():
 
     def __init__(self):
         rospy.init_node('pepper_main', anonymous=False)
-        self.publisher = rospy.Publisher('/pepper_annim', String, queue_size=10)
+        self.publisher = rospy.Publisher('/pepper_anim', String, queue_size=10)
         self.rate = rospy.Rate(10) # 10hz
 
         
@@ -81,7 +84,7 @@ class play_annimation():
 if __name__ == "__main__":
     
     try:
-        tp = play_annimation()
+        tp = Play_Animation()
         tp.publish()
     except rospy.ROSInterruptException:
         pass

@@ -12,6 +12,7 @@ import pepper_bt.configs as cfg
 from statemachine import StateMachine, State
 from pepper_bt.services import Pepper
 from pepper_bt.knowledge_manager import KnowledgeManager, UtteranceType
+from pepper_bt.animation_node import Play_Animation
 
 import py_trees
 import rospy
@@ -124,7 +125,7 @@ class PepperBTControl():
         # Condition
         user_turn = UserTurn(pepper, knowledge_manager, "User is Allowed Turn")
         process_user_input = ProcessUserInput(pepper, knowledge_manager, "Process User Input")
-        attention_evidence = GivieAttentionEvidance(pepper, knowledge_manager, "Give Evidence of Attention, etc")
+        attention_evidence = GiveAttentionEvidance(pepper, knowledge_manager, "Give Evidence of Attention, etc")
         user_initiative.add_children([user_turn,process_user_input,attention_evidence])
 
         robot_turn = py_trees.composites.Selector(name="Robot Has Turn")

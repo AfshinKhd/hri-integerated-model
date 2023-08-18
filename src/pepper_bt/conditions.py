@@ -48,10 +48,18 @@ class UserTurn(py_trees.behaviour.Behaviour):
         helper = KnowledgeManagerHelper(self.knowledge_manager)
 
         if self.knowledge_manager.is_init_state(top_stack_item):
-            return py_trees.common.Status.SUCCESS
-        elif self.knowledge_manager.is_further_utterance(top_stack_item):
-            return py_trees.common.Status.SUCCESS
-        elif helper.is_rate_response(self.knowledge_manager.get_tag(top_stack_item)):
+            if self.knowledge_manager.is_robot_utterance(top_stack_item):
+                return py_trees.common.Status.FAILURE
+            else:
+                return py_trees.common.Status.SUCCESS
+            
+        elif self.knowledge_manager.is_further_state(top_stack_item):
+            if self.knowledge_manager.is_robot_utterance(top_stack_item):
+                return py_trees.common.Status.FAILURE
+            else:
+                return py_trees.common.Status.SUCCESS
+        
+        elif helper.is_rate_response(top_stack_item):
             if self.knowledge_manager.is_finish_state(top_stack_item):
                 return py_trees.common.Status.FAILURE
             return py_trees.common.Status.SUCCESS

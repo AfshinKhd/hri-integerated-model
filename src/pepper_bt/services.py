@@ -31,15 +31,17 @@ class patched_SSHClient(paramiko.SSHClient):
 class Pepper():
 
     def __init__(self, ip_address, port=9559):
-        parser = argparse.ArgumentParser()
-        # Todo: change it
-        parser.add_argument("--ip", type=str, default=ip_address,
-                            help="Robot IP address. On robot or Local Naoqi: use %s." % ip_address)
-        parser.add_argument("--port", type=int, default=port,
-                            help="Naoqi port number")
-        args = parser.parse_args()       
-        self.connection_url = "tcp://" + args.ip + ":" + str(args.port)
+        # This code get ip and port from command
+        # parser = argparse.ArgumentParser()
+        # # Todo: change it
+        # parser.add_argument("--ip", type=str, default=ip_address,
+        #                     help="Robot IP address. On robot or Local Naoqi: use %s." % ip_address)
+        # parser.add_argument("--port", type=int, default=port,
+        #                     help="Naoqi port number")
+        # args = parser.parse_args()       
+        self.connection_url = "tcp://" + ip_address + ":" + str(port)
         self.ip = ip_address
+        self.port = port
 
         self.beep_volume = 70 #(0~100)
         self.tablet_signalID = 0
@@ -47,7 +49,7 @@ class Pepper():
         try:
             #self.app = qi.Application(["TabletModule", "--qi-url=" + self.connection_url])
             self.session = qi.Session()
-            self.session.connect("tcp://" + args.ip + ":" + str(args.port))
+            self.session.connect(self.connection_url)
             self.led_service = self.session.service("ALLeds")
             self.memory_service = self.session.service("ALMemory")
             self.tablet_service = self.session.service("ALTabletService")
@@ -70,8 +72,9 @@ class Pepper():
             #self.scp = SCPClient(ssh.get_transport())
 
         except RuntimeError:
-            print ("Can't connect to Naoqi at ip \"" + args.ip + "\" on port " + str(args.port) +".\n"
-                "Please check your script arguments. Run with -h option for help.")
+            print("Can't connect to Naoqi")
+            # print ("Can't connect to Naoqi at ip \"" + args.ip + "\" on port " + str(args.port) +".\n"
+            #     "Please check your script arguments. Run with -h option for help.")
             sys.exit(1)      
       
     def get_user_speech(self):
@@ -100,7 +103,7 @@ class Pepper():
 
             print("[INFO]: Robot is listening to you...")
             self.speech_service.pause(False)
-            time.sleep(5)
+            time.sleep(4)
             words = self.memory_service.getData("WordRecognized")
 
             return words[0]
@@ -171,55 +174,31 @@ class Pepper():
 
         :param rgb: Color in RGB space
         :type rgb: integer
-
-        :Example:
-
-        >>> pepper.blink_eyes([255, 0, 0])
-
         """
+
         self.led_service.fadeRGB('AllLeds', rgb[0], rgb[1], rgb[2], 1.0)
-
-
-    def share_localhost(folder):
-        """
-        Shares a location on localhost via HTTPS to Pepper be
-        able to reach it by subscribing to IP address of this
-        computer.
-
-        :Example:
-
-
-        :param folder: Root folder to share
-        :type folder: string
-        """
-        # TODO: Add some elegant method to kill a port if previously opened
-        subprocess.Popen(["cd", folder])
-        try:
-            subprocess.Popen(["python", "-m", "SimpleHTTPServer"])
-        except Exception as error:
-            subprocess.Popen(["python", "-m", "SimpleHTTPServer"])
-        print("[INFO]: HTTPS server successfully started")
 
 
     def tablet_show_web(self, url = cfg.WEB_URL):
             try:
                 # Ensure that the tablet wifi is enable
                 self.tablet_service.enableWifi()
-                # Display a web page on the tablet
-                #self.tabletService.showWebview("http://www.facebook.com")
-                #time.sleep(3)
                 self.tablet_service.showWebview(url)
                 return True
+            
             except Exception as e:
-                print("tablet_show_web function, error:",e)
+                print("Tablet show web has error: ",e)
                 return False
             
+
     def tablet_show_rate(self):
         self.tablet_show_web(cfg.RATE_URL)
        
+
     def tablet_hide_web(self):
          self.tablet_service.hideWebview()
     
+
     def download_file(self, file_name):
         """
         Download a file from robot to ./tmp folder in root.
@@ -232,6 +211,7 @@ class Pepper():
         print("[INFO]: File " + file_name + " downloaded")
         self.scp.close()
     
+
     def play_sound(self, sound):
         """
         Play a `mp3` or `wav` sound stored on Pepper
@@ -284,7 +264,7 @@ class Pepper():
         if _async:
             self.start_animation("Explain_11")
         else:
-            topics.play_annimation().publish()
+            topics.Play_Animation().publish()
     
     def hand(self, hand, close):
         """
@@ -417,38 +397,8 @@ class Pepper():
             print("Error was: ", e)
 
     def shotdown_tablet_touch(self):
-        print("sdeewwwwwwwwwwwwwwwwwwwwww")
         self.tablet_service.onTouchDown.disconnect(self.tablet_signalID)
 
-    def ftouch_down_feedback(self):
-        print("here")
-        try:
-            #session = app.session
-            #tabletService = session.service("ALTabletService")
-            coordinate = []
-            # Don't forget to disconnect the signal at the end
-            signalID = 0
-
-            # function called when the signal onTouchDown is triggered
-            def callback(x, y):
-                print("coordinate are x: ", x, " y: ", y)
-                coordinate.append({'x':x, 'y':y})
-                self.tablet_service.onTouchDown.disconnect(signalID)
-                #app.stop()
-               
-             # attach the callback function to onJSEvent signal
-            signalID = self.tablet_service.onTouchDown.connect(callback)
-            #app.run()
-            try:
-                while len(coordinate) == 0:    
-                    time.sleep(.5)
-            except KeyboardInterrupt:
-                print("Interrupted by user, stopping HumanGreeter")
-                return None
-            return coordinate[0]
-
-        except Exception as  e:
-            print("Error was: ", e)
 
     def stand(self):
         """Get robot into default standing position known as `StandInit` or `Stand`"""
