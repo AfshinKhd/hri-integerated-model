@@ -31,7 +31,7 @@ class UserEngaged(py_trees.behaviour.Behaviour):
 
 class UserTurn(py_trees.behaviour.Behaviour):
 
-    def __init__(self, pepper, knowledge_manager, name="User is Allowed Turn"):
+    def __init__(self, pepper, knowledge_manager, name):
         super(UserTurn,self).__init__(name = name)
         self.logger.debug("  %s [Listening::__init__()]" % self.__class__.__name__)
         self.knowledge_manager = knowledge_manager

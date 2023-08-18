@@ -112,7 +112,6 @@ class PepperBTControl():
         #engage_user = py_trees.behaviours.Running(name="Running")
         establish_enagagment.add_children([user_engaged,engage_user])
 
-
         interact_with_user = py_trees.composites.Selector(name="Interact with User")
 
         user_initiative = py_trees.composites.Sequence(name="User's Initiative")
@@ -120,35 +119,25 @@ class PepperBTControl():
         no_one_initiative = NoOneInitiative(self.on_presentation_is_finished, pepper, knowledge_manager, "No One has Initiative")
         interact_with_user.add_children([user_initiative,robot_initiative,no_one_initiative])
     
-        # Todo: I think dummy ?
-        #user_is_speaking = py_trees.behaviours.Success("User is Speaking")
-        # Condition
         user_turn = UserTurn(pepper, knowledge_manager, "User is Allowed Turn")
         process_user_input = ProcessUserInput(pepper, knowledge_manager, "Process User Input")
-        attention_evidence = GiveAttentionEvidance(pepper, knowledge_manager, "Give Evidence of Attention, etc")
+        attention_evidence = GiveUnderstandingEvidance(pepper, knowledge_manager, "Give Evidence of Understanding")
         user_initiative.add_children([user_turn,process_user_input,attention_evidence])
 
-        robot_turn = py_trees.composites.Selector(name="Robot Has Turn")
-        execute_presentation = py_trees.composites.Sequence(name="Execute Presentation")
-        robot_initiative.add_children([robot_turn,execute_presentation])
-    
-        # Condition
-        robot_is_speaking = py_trees.behaviours.Failure("Robot is Speaking")
-        # Action
         robot_takes_turn = RobotTakesTurn(pepper, knowledge_manager, "Robot Takes Turn")
-        robot_turn.add_children([robot_is_speaking, robot_takes_turn])
-
-        # Todo : ????
+        execute_presentation = py_trees.composites.Sequence(name="Execute Presentation")
+        robot_initiative.add_children([robot_takes_turn, execute_presentation])
+    
         react_user_input = ReactUserInput(pepper, knowledge_manager, "React to User Input")
-        # #react_user_input = py_trees.composites.Selector(name="React to User Input")
         ensure_joint_attention = py_trees.composites.Sequence(name="Ensure Joint Attention")
         deliver_presentation = py_trees.composites.Sequence(name="Deliver Presentation")
         execute_presentation.add_children([react_user_input, ensure_joint_attention, deliver_presentation])
 
-        ensure_user_attention = EnsureUserAttention(pepper, "Ensure User Atttention")
-        ensure_joint_attention.add_child(ensure_user_attention)
+        ensure_user_attention_by_gesture = EnsureUserAttentionbyGesture(pepper, knowledge_manager, "Ensure User Atttention by Gesture")
+        ensure_user_attention_by_visual_cue = EnsureUserAttentionbyVisual(pepper, knowledge_manager, "Ensure User Atttention by Visual Cue")
+        ensure_user_attention_by_verbal = EnsureUserAttentionbyVerbal(pepper, knowledge_manager, "Ensure User Atttention by Verbal Comminucation")
+        ensure_joint_attention.add_children([ensure_user_attention_by_verbal, ensure_user_attention_by_visual_cue, ensure_user_attention_by_gesture])
 
-        # Action
         robot_starts_speaking = RobotStartsSpeaking(pepper, knowledge_manager, "Robot Starts Speaking")
         try_other_line = TryOtherLine(pepper, knowledge_manager, "Try Other Line")
         #ensure_positive_understanding = EnsurePositiveUnderstanding(pepper,knowledge_manager, "Ensure Positive Understanding")

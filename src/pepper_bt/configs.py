@@ -5,3 +5,5 @@ INDEX_PATH = "/index.html"
 RATE_PATH = "/rate.html"
 WEB_URL = "http://" + REMOTE_IP + INDEX_PATH
 RATE_URL = "http://" + REMOTE_IP + RATE_PATH
+
+VOICE_SPEED_LOW = 80

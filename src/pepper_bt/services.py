@@ -179,6 +179,20 @@ class Pepper():
         self.led_service.fadeRGB('AllLeds', rgb[0], rgb[1], rgb[2], 1.0)
 
 
+
+    def fade_ears(self):
+        # Example showing how to fade the ears group to mid-intensity
+        name = 'EarLeds'
+        intensity = 0.5
+        duration = 1.0
+        self.led_service.fade(name, intensity, duration)
+
+    def led_rasta(self):
+   
+        # Example showing a one second rasta animation
+        duration = 1.0
+        self.led_service.rasta(duration)
+
     def tablet_show_web(self, url = cfg.WEB_URL):
             try:
                 # Ensure that the tablet wifi is enable

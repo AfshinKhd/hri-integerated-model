@@ -120,7 +120,6 @@ class RobotTakesTurn(py_trees.behaviour.Behaviour):
         if helper.is_init_response(top_stack_item):
             dialog = Backchannel.CONFIRM.value
             self.knowledge_manager.add_item(UtteranceType.INIT, UtteranceType.ROBOT, dialog, self.knowledge_manager.get_tag(top_stack_item),topics.get_current_time() ,backchannel=True)
-            self._say(dialog)
             return py_trees.common.Status.SUCCESS     
                   
         elif helper.is_further_response(top_stack_item):
@@ -128,14 +127,10 @@ class RobotTakesTurn(py_trees.behaviour.Behaviour):
                 dialog = Backchannel.CONFIRM.value
                 self.knowledge_manager.add_item(UtteranceType.FURTHER, UtteranceType.ROBOT, dialog, self.knowledge_manager.get_tag(top_stack_item), topics.get_current_time(), backchannel=True)
                 self.blackboard.set(BlackboardItems.LAST_FURTHER.value, value=True, overwrite=True)
-                self._say(dialog)
                 return py_trees.common.Status.SUCCESS
             else:
-                dialog = const.GET_USER_FEEDBACK
                 _tag = get_next_tag(self.knowledge_manager.get_tag(top_stack_item))
                 self.knowledge_manager.add_item(UtteranceType.RATE, None, "", _tag, topics.get_current_time(), backchannel=False)
-                self.knowledge_manager.add_item(UtteranceType.RATE, UtteranceType.ROBOT, dialog, _tag, topics.get_current_time(), backchannel=False)
-                self._say(dialog)
                 return py_trees.common.Status.FAILURE
 
         elif helper.is_rate_response(top_stack_item):
@@ -150,7 +145,7 @@ class RobotTakesTurn(py_trees.behaviour.Behaviour):
          
 
     def _say(self, dialog):
-        self.pepper.set_speech_speed(80)
+        self.pepper.set_speech_speed(cfg.VOICE_SPEED_LOW)
         self.pepper.say(dialog)
         self.pepper.reset_speach_speed()
         time.sleep(1)
@@ -190,11 +185,16 @@ class ProcessUserInput(py_trees.behaviour.Behaviour):
             self.knowledge_manager.add_item(UtteranceType.FURTHER, UtteranceType.ROBOT, "Your Answer is " + _user_response, self.knowledge_manager.get_tag(top_stack_item), topics.get_current_time(), backchannel=False)
 
         elif helper.is_rate_response(top_stack_item):
+            # Ask user for rate
+            dialog = const.GET_USER_FEEDBACK
+            self.knowledge_manager.add_item(UtteranceType.RATE, UtteranceType.ROBOT, dialog, self.knowledge_manager.get_tag(top_stack_item), topics.get_current_time(), backchannel=False)
+            self._say(dialog)
+            # Show the rate html
             self.pepper.tablet_show_rate()
             coordinate = self.pepper._touch_down_feedback(lower_x=160, upper_x=1590, lower_y=370 , upper_y=680)
             _rate = self.get_user_rate(coordinate)
             self.pepper.tablet_hide_web()
-             # Todo: rate handling function
+
             self.knowledge_manager.add_item(UtteranceType.RATE, UtteranceType.USER, _rate, self.knowledge_manager.get_tag(top_stack_item), topics.get_current_time(), backchannel=False)
             self.knowledge_manager.add_item(UtteranceType.RATE, UtteranceType.ROBOT, const.THANKS, self.knowledge_manager.get_tag(top_stack_item), topics.get_current_time(), backchannel=False)
 
@@ -223,7 +223,7 @@ class ProcessUserInput(py_trees.behaviour.Behaviour):
 
     
     def _say(self, dialog):
-        self.pepper.set_speech_speed(80)
+        self.pepper.set_speech_speed(cfg.VOICE_SPEED_LOW)
         self.pepper.say(dialog)
         self.pepper.reset_speach_speed()
 
@@ -284,10 +284,34 @@ class ReactUserInput(py_trees.behaviour.Behaviour):
         self.logger.debug("[%s::terminate()]" % self.__class__.__name__)
 
 
-class EnsureUserAttention(py_trees.behaviour.Behaviour):
+class EnsureUserAttentionbyGesture(py_trees.behaviour.Behaviour):
 
-    def __init__(self, pepper, name):
-        super(EnsureUserAttention,self).__init__(name = name)
+    def __init__(self, pepper, knowledge_manager, name):
+        super(EnsureUserAttentionbyGesture,self).__init__(name = name)
+        self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
+        self.pepper = pepper
+        self.blackboard = py_trees.Blackboard()
+
+    def initialise(self):
+        self.logger.debug("[%s::initialise()]" % self.__class__.__name__)
+
+
+    def update(self):
+        self.logger.debug("[%s::update()]" % self.__class__.__name__)
+
+        self.pepper.start_animation("Explain_1")
+
+        return py_trees.common.Status.SUCCESS
+
+    
+    def terminate(self, new_status):
+        self.logger.debug("[%s::terminate()]" % self.__class__.__name__)
+
+
+class EnsureUserAttentionbyVisual(py_trees.behaviour.Behaviour):
+
+    def __init__(self, pepper, knowledge_manager, name):
+        super(EnsureUserAttentionbyVisual,self).__init__(name = name)
         self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
         self.pepper = pepper
         self.blackboard = py_trees.Blackboard()
@@ -299,12 +323,48 @@ class EnsureUserAttention(py_trees.behaviour.Behaviour):
     def update(self):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
         
+        self.pepper.fade_ears()
 
         return py_trees.common.Status.SUCCESS
 
     
     def terminate(self, new_status):
         self.logger.debug("[%s::terminate()]" % self.__class__.__name__)
+
+
+class EnsureUserAttentionbyVerbal(py_trees.behaviour.Behaviour):
+
+    def __init__(self, pepper, knowledge_manager, name):
+        super(EnsureUserAttentionbyVerbal,self).__init__(name = name)
+        self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
+        self.pepper = pepper
+        self.knowledge_manager = knowledge_manager
+        self.blackboard = py_trees.Blackboard()
+
+    def initialise(self):
+        self.logger.debug("[%s::initialise()]" % self.__class__.__name__)
+
+
+    def update(self):
+        self.logger.debug("[%s::update()]" % self.__class__.__name__)
+        
+        top_stack_item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
+        helper = KnowledgeManagerHelper(self.knowledge_manager)
+        _dialog = helper.get_backchannel_utterance(self.knowledge_manager.get_tag(top_stack_item))
+        self._say(_dialog)
+        time.sleep(1)
+
+        return py_trees.common.Status.SUCCESS
+
+    
+    def terminate(self, new_status):
+        self.logger.debug("[%s::terminate()]" % self.__class__.__name__)
+
+    def _say(self, dialog):
+        self.pepper.set_speech_speed(cfg.VOICE_SPEED_LOW)
+        self.pepper.say(dialog)
+        self.pepper.reset_speach_speed()
+        
 
 
 class EnsurePositiveUnderstanding(py_trees.behaviour.Behaviour):
@@ -331,12 +391,14 @@ class EnsurePositiveUnderstanding(py_trees.behaviour.Behaviour):
     def terminate(self, new_status):
         self.logger.debug("[%s::terminate()]" % self.__class__.__name__)
 
+        
 
 
-class GiveAttentionEvidance(py_trees.behaviour.Behaviour):
+
+class GiveUnderstandingEvidance(py_trees.behaviour.Behaviour):
 
     def __init__(self, pepper, knowledge_manager, name):
-        super(GiveAttentionEvidance,self).__init__(name = name)
+        super(GiveUnderstandingEvidance,self).__init__(name = name)
         self.logger.debug("[%s::__init__()]" % self.__class__.__name__)
         self.pepper = pepper
         self.knowledge_manager = knowledge_manager
@@ -429,7 +491,7 @@ class TryOtherLine(py_trees.behaviour.Behaviour):
         return py_trees.common.Status.SUCCESS
 
     def _say(self, dialog):
-        self.pepper.set_speech_speed(80)
+        self.pepper.set_speech_speed(cfg.VOICE_SPEED_LOW)
         self.pepper.say(dialog)
         self.pepper.reset_speach_speed()
     
