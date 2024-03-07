@@ -12,29 +12,7 @@ import time
  
     
 class RobotStartsSpeaking(py_trees.behaviour.Behaviour):
-    """
-        Initializes a custom PyTorch dataset for dialogue processing.
 
-        Args:
-            speakers (pd.core.series.Series): Series containing speaker information.
-            dialogues (pd.core.series.Series): Series containing dialogue utterances.
-            emotions (pd.core.series.Series): Series containing emotion information.
-            triggers (pd.core.series.Series): Series containing trigger information.
-            device: PyTorch device to store the tensors.
-            pad_token (str): Token to use for padding dialogue sequences.
-            max_num_utterances (int): Maximum number of utterances to consider in a dialogue.
-
-        Returns:
-            tuple: A tuple containing tensors for speakers, dialogue IDs, dialogue masks, emotions, and triggers.
-
-        Note:
-            - The dataset preprocesses dialogues, speakers, emotions, and triggers with padding.
-            - For each dialogue, a sequence of padding tokens is added to match the length of the longest dialogue in the dataset.
-            - For each dialogue, dialogue ids and dialogue mask are created using the tokenizer.
-            - For each speakers instance, a sequence of zeros is appended to align with the maximum number of utterances in any dialogue.
-            - For each emotions instance, a sequence of arrays of zeros is appended to align with the maximum number of utterances in any dialogue.
-            - For each triggers instance, a sequence of zeros is appended to align with the maximum number of utterances in any dialogue.
-    """
 
     def __init__(self, pepper,knowledge_manager, name):
         super(RobotStartsSpeaking,self).__init__(name = name)

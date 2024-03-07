@@ -63,9 +63,3 @@ def launch_annimation():
     except RuntimeError:
         print("pepper_animation is shutting down! + run")
 
-# if __name__ == "__main__":
-#     try:
-#         tp = Play_Animation()
-#         tp.listen()
-#     except rospy.ROSInterruptException:
-#         pass

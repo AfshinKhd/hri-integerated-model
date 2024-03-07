@@ -71,7 +71,19 @@ class Pepper_Run():
 
 
 class PepperBTControl():
+    """
+        controll Behavior Tree procedure.
 
+        Args:
+
+
+        Returns:
+ 
+
+        Note:
+            
+    """
+    
     def __init__(self,pepper, knowledge_manager, on_presentation_is_finished):
 
         self.on_presentation_is_finished = on_presentation_is_finished
@@ -149,7 +161,14 @@ class PepperBTControl():
     
 
 
-class PepperFSMControl():
+class PepperFSMControl():    
+    """
+        controll Finite State Machine procedure
+
+
+        Note:
+            There Are 3 distinct states. Each state has specific rules and detect states give turn to Behavior Tree for presenting arts.
+    """
     def __init__(self, pepper, behaviour_tree):
         self.behaviour_tree = behaviour_tree
         self.current_state = 'start'
