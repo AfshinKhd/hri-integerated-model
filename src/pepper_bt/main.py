@@ -4,6 +4,7 @@ import py_trees
 import time
 #from pepper_bt.topics import Speaking
 
+
 import pepper_bt.constant as const
 from pepper_bt.conditions import *
 from pepper_bt.actions import *
@@ -19,8 +20,6 @@ import rospy
 from std_msgs.msg import String
 
 
-
-
 class Pepper_Run():
     def __init__(self):
         self.pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
@@ -34,8 +33,6 @@ class Pepper_Run():
         print("\nPepper Stop Presentation!\n")
         
 
-
-
     def on_presentation_is_finished(self, data_speech):
         """
 
@@ -48,10 +45,8 @@ class Pepper_Run():
         self.fsm_controller.cycle() # Go to idle state
         
          
-
     def run(self):
 
-        #for _unused_i in range(0, 10) :
         self.fsm_controller.start()
         while not self.fsm_controller.force_stop:
             # if self.fsm_controller.force_stop:
@@ -195,15 +190,15 @@ class PepperFSMControl():
         self.human_greeter.run()
 
     def on_exit_start(self):
-        print("=====Exit Start STATE")
-        #self.human_greeter.stop()
+        print("====Exit Start STATE")
+        self.human_greeter.stop()
 
     def on_enter_idle(self):
         print("====Enter Idle STATE") 
         self.human_greeter.got_face = False # Preparation for new presentation
 
     def on_exit_idle(self):
-        print("=====Exit Idle STATE")
+        print("====Exit Idle STATE")
 
     def on_enter_detected(self):
         print("====Enter Detected STATE")
@@ -218,73 +213,12 @@ class PepperFSMControl():
         return self.current_state == 'detect'
 
     def callback_method(self, value):
-        # if params['on'] == "human_tracked":
-        #     if params == []:  # empty value when the face disappears
-        #         print("empty")
-        #         self.got_face = False
-        #     elif not self.got_face:  # only speak the first time a face appears
-        #         self.got_face = True
-        #         print("<><><><><>I saw a face!")
-        #         value = params['value']
-        # elif params['on'] == "touched":
-        #     value = params['value']
-        # else:
-        #     print("trigger goes wrong!")
-        #     value = ""
-        
+
         if value == "FORCE_STOP":
-            print('force stoppppppppppppp')
+            print('#################FORCE STOP##################')
             self.force_stop = True
             self.behaviour_tree.destroy()   
             self.human_greeter.stop()
-            #quit()
-            #raise RuntimeError("Forced Stop")
-            #sys.exit(1)
-
-        # Todo: Do something with the received value
-        # First Field = TimeStamp[second, miliseconds]
-        # timeStamp = value[0]
-        # print("TimeStamp is: " + str(timeStamp))
-
-        # # Second Field = array of face_Info's.
-        # faceInfoArray = value[1]
-        # print("length of face info arrary (no. person) : ", len(faceInfoArray))
-        # for j in range( len(faceInfoArray)-1 ):
-        #     faceInfo = faceInfoArray[j]
-
-        #     # First Field = Shape info.
-        #     """
-        #     ShapeInfo =
-        #     [
-        #     0,
-        #     alpha,
-        #     beta,
-        #     sizeX,
-        #     sizeY
-        #     ]
-        #     """
-        #     faceShapeInfo = faceInfo[0]
-
-        #     # Second Field = Extra info (empty for now).
-        #     """
-        #     ExtraInfo =
-        #     [
-        #     faceID,
-        #     scoreReco,
-        #     faceLabel,
-        #     leftEyePoints,
-        #     rightEyePoints,
-        #     unused, # for backward-compatibility issues
-        #     unused,
-        #     nosePoints,
-        #     mouthPoints
-        #     ]
-        #     """
-        #     faceExtraInfo = faceInfo[1]
-
-        #     print("Face Infos :  alpha %.3f - beta %.3f \n" % (faceShapeInfo[1], faceShapeInfo[2]))
-        #     print("Face Infos :  width %.3f - height %.3f \n" % (faceShapeInfo[3], faceShapeInfo[4]))
-        #     print("Face Extra Infos :" + str(faceExtraInfo))
 
         # User recognised, start new presentation
         if self.is_idle_active():
@@ -304,109 +238,3 @@ def main():
 
 
 
-class PepperDetectionControl(StateMachine):
-    idle = State("Idle",initial=True)
-    people_detected = State("Person Detected")
-
-    cycle = idle.to(people_detected) | people_detected.to(idle)
-    people_recognised = idle.to(people_detected)
-    people_disappeared = people_detected.to(idle)
-
-    def __init__(self):
-        self.pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
-        self.human_greeter = self.pepper.start_recognizing_people()
-        self.human_greeter.set_callback(self.callback_method)
-        self.face_detected = False
-        super(PepperDetectionControl, self).__init__()
-
-    def before_cycle(self, event_data=None):
-        message = event_data.kwargs.get("message", "")
-        message = ". " + message if message else ""
-        return "Running {} from {} to {}{}".format(
-            event_data.event,
-            event_data.transition.source.id,
-            event_data.transition.target.id,
-            message,
-        )
-    
-
-  
-        
-    def on_enter_idle(self):
-        print("====enter idle STATE")   
-        # Reset for finin
-        self.face_detected = False 
-        self.human_greeter.run()
-
-    def on_exit_idle(self):
-        print("=====exit idle STATE")
-        #self.human_greeter.stop()
-
-    def on_enter_people_detected(self):
-        print("====enter people detected STATE")
-        # PepperPresentationControl()
-        behaviour_tree = Pepper_Run.PepperBTControl()
-        behaviour_tree.tick()
-
-
-    def on_exit_people_detected(self):
-        print("^^^====exit People detected STATE")
-
-    def callback_method(self, value):
-        # Do something with the received value
-        # First Field = TimeStamp[second, miliseconds]
-        timeStamp = value[0]
-        print("TimeStamp is: " + str(timeStamp))
-
-        # Second Field = array of face_Info's.
-        faceInfoArray = value[1]
-        print("length of face info arrary (no. person) : ", len(faceInfoArray))
-        for j in range( len(faceInfoArray)-1 ):
-            faceInfo = faceInfoArray[j]
-
-            # First Field = Shape info.
-            """
-            ShapeInfo =
-            [
-            0,
-            alpha,
-            beta,
-            sizeX,
-            sizeY
-            ]
-            """
-            faceShapeInfo = faceInfo[0]
-
-            # Second Field = Extra info (empty for now).
-            """
-            ExtraInfo =
-            [
-            faceID,
-            scoreReco,
-            faceLabel,
-            leftEyePoints,
-            rightEyePoints,
-            unused, # for backward-compatibility issues
-            unused,
-            nosePoints,
-            mouthPoints
-            ]
-            """
-            faceExtraInfo = faceInfo[1]
-
-            print("Face Infos :  alpha %.3f - beta %.3f \n" % (faceShapeInfo[1], faceShapeInfo[2]))
-            print("Face Infos :  width %.3f - height %.3f \n" % (faceShapeInfo[3], faceShapeInfo[4]))
-            print("Face Extra Infos :" + str(faceExtraInfo))
-
-        if not self.face_detected:
-            self.send('cycle')
-            self.face_detected = True
-            print(")))))))))cycle")
-        
-
-    def say(self):
-        print("heere")
-        rospy.init_node('pepper_speaker')
-        publisher = rospy.Publisher('/speech', String, queue_size=10)
-        rospy.sleep(2.0)
-        publisher.publish("this is test")

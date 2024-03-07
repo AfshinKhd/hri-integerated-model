@@ -12,6 +12,29 @@ import time
  
     
 class RobotStartsSpeaking(py_trees.behaviour.Behaviour):
+    """
+        Initializes a custom PyTorch dataset for dialogue processing.
+
+        Args:
+            speakers (pd.core.series.Series): Series containing speaker information.
+            dialogues (pd.core.series.Series): Series containing dialogue utterances.
+            emotions (pd.core.series.Series): Series containing emotion information.
+            triggers (pd.core.series.Series): Series containing trigger information.
+            device: PyTorch device to store the tensors.
+            pad_token (str): Token to use for padding dialogue sequences.
+            max_num_utterances (int): Maximum number of utterances to consider in a dialogue.
+
+        Returns:
+            tuple: A tuple containing tensors for speakers, dialogue IDs, dialogue masks, emotions, and triggers.
+
+        Note:
+            - The dataset preprocesses dialogues, speakers, emotions, and triggers with padding.
+            - For each dialogue, a sequence of padding tokens is added to match the length of the longest dialogue in the dataset.
+            - For each dialogue, dialogue ids and dialogue mask are created using the tokenizer.
+            - For each speakers instance, a sequence of zeros is appended to align with the maximum number of utterances in any dialogue.
+            - For each emotions instance, a sequence of arrays of zeros is appended to align with the maximum number of utterances in any dialogue.
+            - For each triggers instance, a sequence of zeros is appended to align with the maximum number of utterances in any dialogue.
+    """
 
     def __init__(self, pepper,knowledge_manager, name):
         super(RobotStartsSpeaking,self).__init__(name = name)
@@ -68,15 +91,24 @@ class EngageUser(py_trees.behaviour.Behaviour):
         
         if self.pepper.tablet_show_web():           
             # Waiting for action of user
-            coordinate = self.pepper._touch_down_feedback(lower_x=80, upper_x=1680, lower_y=0 , upper_y=1020)
+            paintings = const.PAINTINGS # Give back a dictionary with information about paints
+            coordinate = self.pepper._touch_down_feedback(lower_x=150, upper_x=1680, lower_y=250 , upper_y=1020) # params set for kernel which occured the paints
 
-            # Todo: dynamic numbers
-            if coordinate['x'] < 690 :
-                selected_painting = const.judgment_of_cambyses_painting['name']
-            elif coordinate['x'] > 690 :
-                selected_painting = const.scream_painting['name']
+            print("night: ")
+            print(paintings['nighthawks'].lower_x)
+
+            if coordinate['x'] < paintings['nighthawks'].upper_x :
+                selected_painting = 'nighthawks'
+            elif coordinate['x'] < paintings['mona_lisa'].upper_x  :
+                selected_painting = 'mona_lisa'
+            elif coordinate['x'] < paintings['starry_night'].upper_x  :
+                selected_painting = 'starry_night'
+            elif coordinate['x'] < paintings['the_persistence_of_memory'].upper_x  :
+                selected_painting = 'the_persistence_of_memory'
             else:
                 print("[ERROR]] coordinate is wrong!")
+
+            print("selected paint is:",selected_painting)
 
             if selected_painting is None :
                 print("[ERROR] There is no Painting")
@@ -200,7 +232,9 @@ class ProcessUserInput(py_trees.behaviour.Behaviour):
 
         else:
             current_time = topics.get_current_time()
-            dialog = "Selected Painting is " + ("" if self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value) == None else self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value))
+            paintings = const.PAINTINGS  
+            selected_painting = "" if self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value) == None else paintings[self.blackboard.get(BlackboardItems.SELECTED_PAINTING.value)].name               
+            dialog = "Selected Painting is " + selected_painting
             self.knowledge_manager.add_item(UtteranceType.INIT, UtteranceType.ROBOT, dialog, self.knowledge_manager.get_tag(top_stack_item), current_time, backchannel=False)
 
 
@@ -248,28 +282,24 @@ class ReactUserInput(py_trees.behaviour.Behaviour):
 
     def update(self):
         self.logger.debug("[%s::update()]" % self.__class__.__name__)
-
+        paintings = const.PAINTINGS
         top_stack_item = self.knowledge_manager.pop(self.knowledge_manager._generator_list())
         helper = KnowledgeManagerHelper(self.knowledge_manager)
-
+        selected_painting = helper.get_selected_painting(self.knowledge_manager.get_tag(top_stack_item))
         print(str(self.knowledge_manager))
 
         if helper.is_further_response(top_stack_item):
             _state = UtteranceType.FURTHER
-            if helper.get_selected_painting(self.knowledge_manager.get_tag(top_stack_item)) == const.judgment_of_cambyses_painting['name']:
-                dialog = const.JUDGEMNT_OF_CAMBYSES_PAINTING_FURTHER
-            elif helper.get_selected_painting(self.knowledge_manager.get_tag(top_stack_item)) == const.scream_painting['name']:
-                dialog = const.SCREAM_PAINTING_FURTHER
+            if selected_painting != "":
+                dialog = paintings[selected_painting].further_info
             else:
                 print("Cannot find the painting")
                 return py_trees.common.Status.FAILURE
             
         else:
             _state = UtteranceType.INIT
-            if helper.get_selected_painting(self.knowledge_manager.get_tag(top_stack_item)) == const.judgment_of_cambyses_painting['name']:
-                dialog = const.JUDGEMNT_OF_CAMBYSES_PAINTING_DESCRIBTION
-            elif helper.get_selected_painting(self.knowledge_manager.get_tag(top_stack_item))  == const.scream_painting['name']:
-                dialog = const.SCREAM_PAINTING_DESCRIBTION
+            if selected_painting != "":
+                dialog = paintings[selected_painting].describtion
             else:
                 print("Cannot find the painting")
                 return py_trees.common.Status.FAILURE

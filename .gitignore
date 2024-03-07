@@ -1,8 +1,10 @@
 *.py[cod]
 
 .menv/
+.vscode/
 
 present_poster.dot
 present_poster.svg
 present_poster.png
 
+speech_data.txt

@@ -6,6 +6,7 @@ from py_trees import common
 import rospy
 from std_msgs.msg import String, Bool
 from pepper_bt.msg import SpeechParams
+from naoqi_bridge_msgs.msg import AudioBuffer
 import configs as cfg
 import os
 import pepper_bt.util 
@@ -21,6 +22,16 @@ class Speaking():
         rospy.sleep(2.0)
         self.publisher.publish(message)
 
+
+class Listener_():
+
+    def __init__(self):
+        rospy.init_node('pepper_main', anonymous=True)
+        self.subscriber = rospy.Subscriber("/naoqi_microphone/audio_raw", AudioBuffer, self.speech_cb)
+        rospy.spin()
+
+    def speech_cb(self,data):
+        print("data is:",data)
 
 
 class Speaking_():

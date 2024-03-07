@@ -1,13 +1,13 @@
-{'state': 'init', 'tag': 'a01', 'speaker': '', 'time': 1692372148.417235, 'utterance': 'judgment_of_cambyses', 'backchannel': False}
-{'state': 'init', 'tag': 'a01', 'speaker': 'robot', 'time': 1692372148.418295, 'utterance': 'Selected Painting is judgment_of_cambyses', 'backchannel': False}
-{'state': 'init', 'tag': 'a01', 'speaker': 'robot', 'time': 1692372155.380238, 'utterance': 'Umm', 'backchannel': True}
-{'state': 'init', 'tag': 'a01', 'speaker': 'robot', 'time': 1692372155.380726, 'utterance': '\nRubens painted a commissioned work depicting the story of Sisamnes\n', 'backchannel': False}
-{'state': 'further', 'tag': 'a02', 'speaker': '', 'time': 1692372164.645342, 'utterance': '', 'backchannel': False}
-{'state': 'further', 'tag': 'a02', 'speaker': 'robot', 'time': 1692372165.647178, 'utterance': 'Do you want further information about painting? Please say Yes or No after beep sound?', 'backchannel': False}
-{'state': 'further', 'tag': 'a02', 'speaker': 'user', 'time': 1692372177.304421, 'utterance': 'no', 'backchannel': False}
-{'state': 'further', 'tag': 'a02', 'speaker': 'robot', 'time': 1692372177.304458, 'utterance': 'Your Answer is no', 'backchannel': False}
-{'state': 'rate', 'tag': 'a03', 'speaker': '', 'time': 1692372182.091243, 'utterance': '', 'backchannel': False}
-{'state': 'rate', 'tag': 'a03', 'speaker': 'robot', 'time': 1692372183.094779, 'utterance': 'Please Give me a rate between one to five!', 'backchannel': False}
-{'state': 'rate', 'tag': 'a03', 'speaker': 'user', 'time': 1692372188.419164, 'utterance': 5, 'backchannel': False}
-{'state': 'rate', 'tag': 'a03', 'speaker': 'robot', 'time': 1692372188.419289, 'utterance': 'Thank you', 'backchannel': False}
-{'state': 'finish', 'tag': 'a03', 'speaker': '', 'time': 1692372191.773166, 'utterance': '', 'backchannel': False}
+{'state': 'init', 'tag': 'a01', 'speaker': '', 'time': 1692372565.566024, 'utterance': 'judgment_of_cambyses', 'backchannel': False}
+{'state': 'init', 'tag': 'a01', 'speaker': 'robot', 'time': 1692372565.566884, 'utterance': 'Selected Painting is judgment_of_cambyses', 'backchannel': False}
+{'state': 'init', 'tag': 'a01', 'speaker': 'robot', 'time': 1692372572.554111, 'utterance': 'Umm', 'backchannel': True}
+{'state': 'init', 'tag': 'a01', 'speaker': 'robot', 'time': 1692372572.554589, 'utterance': '\nRubens painted a commissioned work depicting the story of Sisamnes\n', 'backchannel': False}
+{'state': 'further', 'tag': 'a02', 'speaker': '', 'time': 1692372581.792683, 'utterance': '', 'backchannel': False}
+{'state': 'further', 'tag': 'a02', 'speaker': 'robot', 'time': 1692372582.793338, 'utterance': 'Do you want further information about painting? Please say Yes or No after beep sound?', 'backchannel': False}
+{'state': 'further', 'tag': 'a02', 'speaker': 'user', 'time': 1692372594.265, 'utterance': 'no', 'backchannel': False}
+{'state': 'further', 'tag': 'a02', 'speaker': 'robot', 'time': 1692372594.26513, 'utterance': 'Your Answer is no', 'backchannel': False}
+{'state': 'rate', 'tag': 'a03', 'speaker': '', 'time': 1692372599.036732, 'utterance': '', 'backchannel': False}
+{'state': 'rate', 'tag': 'a03', 'speaker': 'robot', 'time': 1692372600.039983, 'utterance': 'Please Give me a rate between one to five!', 'backchannel': False}
+{'state': 'rate', 'tag': 'a03', 'speaker': 'user', 'time': 1692372614.890697, 'utterance': 2, 'backchannel': False}
+{'state': 'rate', 'tag': 'a03', 'speaker': 'robot', 'time': 1692372614.890785, 'utterance': 'Thank you', 'backchannel': False}
+{'state': 'finish', 'tag': 'a03', 'speaker': '', 'time': 1692372618.221156, 'utterance': '', 'backchannel': False}

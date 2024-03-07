@@ -46,8 +46,6 @@ class KnowledgeManager():
             return ""
         return item[Utterance.TAG.value]
     
-
-    
     @staticmethod
     def is_robot_utterance(item):
         if item == None:
@@ -157,8 +155,6 @@ class KnowledgeManagerHelper():
     
     def get_backchannel_utterance(self, tag):
         for item in self.knowledge_manager.get_list():
-            print(item.get(Utterance.BACKCHANNEL.value))
-            print(item.get(Utterance.TAG.value))
             if item.get(Utterance.TAG.value) == tag and item.get(Utterance.SPEAKER.value) == UtteranceType.ROBOT.value and item.get(Utterance.BACKCHANNEL.value):
                 return item.get(Utterance.UTTERANCE.value)
         return ""

@@ -7,48 +7,11 @@ import pepper_bt.constant as const
 import pepper_bt.topics as topics
 import rospy
 from pepper_bt.main import *
-
-# pepper = Pepper(cfg.IP_ADDRESS, cfg.PORT)
-# pepper.listen()
-# human_greeter = pepper.start_recognizing_people()
-# human_greeter.set_callback(PepperFSMControl.callback_method)
+import pepper_bt.audio_test   as a
+import pepper_bt.test_audio as test
 
 
-  
-        
-#pepper.tablet_services()
-#pepper.presentation_gesture()
-#pepper.tablet_show_web("")
-#pepper.share_localhost("/home/aass/html")
-# pepper.listen()
-
-#pepper.say(const.SCREAM_PAINTING)
-# pepper.tablet_show_rate()
-# coordinate = pepper._touch_down_feedback(lower_x=0, upper_x=1200, lower_y=0 , upper_y=800)
 p.main()
 
 
-# from threading import Thread
-
-
-# def start_speainking():
-#     print("here")
-#     speak = topics.Speaking_()
-#     speak.say(const.SCREAM_PAINTING)
- 
-#     while not rospy.is_shutdown() :
-#         tic = time.time()
-#         # print(tic)
-	
-
-# if __name__ == "__main__":
-
-#     thread_speak = Thread(target=start_speainking ,args=())
-#     thread_speak.daemon = True
-#     thread_speak.start()
-#     #thread_speak.join()
-
-#     print("hellllloooooo")
-#     # while not rospy.is_shutdown() :
-#     #     tic = time.time()
 

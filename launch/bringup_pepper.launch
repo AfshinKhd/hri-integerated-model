@@ -2,9 +2,14 @@
 <launch>
 
     <include file="$(find naoqi_driver)/launch/naoqi_driver.launch" >
-    <arg name="nao_ip" value="10.0.0.3 "/>
+    <arg name="nao_ip" value="10.0.0.2"/>
     <arg name="network_interface" value="ens33"/>
     </include>
+
+    <!-- <include file = "$(find naoqi_sensors_py)/launch/microphone.launch" >
+    <arg name="frequency" value="48000" />
+    <arg name="use_ros_time" value="True" />
+    </include> -->
 
     <node name="pepper_annim" pkg="pepper_bt" type="animation_node"  output="screen" >
     </node>
